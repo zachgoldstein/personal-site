@@ -1,0 +1,18 @@
+baseURL = "https://zachgoldstein.github.io/"
+languageCode = "en-us"
+title = "Zach Goldstein"
+theme = "m10c"
+
+[params]
+  author = "Zach Goldstein"
+  description = "zachgold at gmail dot com ;)"
+  avatar = "zachGoldstein.png"
+  [[params.social]]
+    name = "github"
+    url = "https://github.com/zachgoldstein"
+  [[params.social]]
+    name = "twitter"
+    url = "https://twitter.com/whatthezach"
+  [[params.social]]
+    name = "linkedin"
+    url = "https://www.linkedin.com/in/zach-goldstein-90489a5/"
