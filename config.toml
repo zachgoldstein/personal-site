@@ -1,4 +1,4 @@
-baseURL = "https://zachgoldstein.github.io/"
+baseURL = ""
 languageCode = "en-us"
 title = "Zach Goldstein"
 theme = "m10c"
