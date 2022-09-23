@@ -7,8 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="author" content="{{ .Site.Params.author | default "John Doe" }}" />
     <meta name="description" content="{{ if .IsHome }}{{ .Site.Params.description }}{{ else }}{{ .Description }}{{ end }}" />
+    
     {{ $style := resources.Get "css/main.scss" | resources.ExecuteAsTemplate "css/main.scss" . | resources.ToCSS | resources.Minify | resources.Fingerprint -}}
     <link rel="stylesheet" href="{{ $style.Permalink }}" />
+  <style>
+    .align-left {
+      max-width: 50%;
+      width: auto\9*0.3; /* ie8 */
+      height: auto;
+      float: left;
+    }
+    .align-right {
+      max-width: 50%;
+      width: auto\9*0.3; /* ie8 */
+      height: auto;
+      float: right;
+    }
+    .image-block {
+      display: inline-block;
+      border: 1px solid red;
+      padding: 1rem 1rem;
+      vertical-align: middle;
+    }
+    .block-right {
+      max-width: 50%;
+      width: auto\9*0.3; /* ie8 */
+      height: auto;
+      display: block;
+    }
+
+    .post-content #TableOfContents ul{
+      list-style-type: none;
+    }
+    .center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      width: 50%;
+    }
+  </style>
+  
 
     {{ template "_internal/google_analytics.html" . }}
     {{ template "_internal/twitter_cards.html" . }}
@@ -37,6 +75,15 @@
         {{ end }}
       </div>
     </header>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+
+      gtag('config', 'G-G6MTBYH8WC');
+    </script>
     <main class="app-container">
       {{ block "main" . }}
         {{ .Content }}
