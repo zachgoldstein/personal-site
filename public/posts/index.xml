@@ -1,71 +1,7 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Posts on Zach Goldstein</title>
-    <link>/posts/</link>
-    <description>Recent content in Posts on Zach Goldstein</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    <lastBuildDate>Thu, 22 Sep 2022 12:22:38 -0400</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>MechaTarot - The Self-Serve Tarot Machine</title>
-      <link>/posts/mechatarot/mechatarot/</link>
-      <pubDate>Thu, 22 Sep 2022 12:22:38 -0400</pubDate>
-      
-      <guid>/posts/mechatarot/mechatarot/</guid>
-      <description>The Inciting Incident So What Is This? Kicking Things Off Thermal Printer Bitamp Adventures Moving To Protoboard Mechanical Design The Cards Protoboard To PCB The Event What’s Next For This Project? This summer, I built a fun little machine that does Tarot readings! This is the story of how it came to be, warts and all. I learned a ton about how to piece together a project spanning mechanical and electrical systems.</description>
-    </item>
-    
-    <item>
-      <title>Work Experience</title>
-      <link>/posts/previouswork/</link>
-      <pubDate>Fri, 05 Jul 2019 15:27:11 -0400</pubDate>
-      
-      <guid>/posts/previouswork/</guid>
-      <description>Toptal - Software Engineer Sep 2016 – Ongoing Architected earthquake detection systems for Rio Tinto&amp;rsquo;s Mongolian mine Oyu Tolgoi, one of the largest mines in the world Worked directly with seismologists and on-site personel to build python pipelines deployed on kubernetes Drove the creation of a new revenue stream forjuice bar chain puregreen by building full stack system to create, manage, and execute subscriptions Used django, react, and redux. Integrated directly with payment provider and distribution partner https://www.</description>
-    </item>
-    
-    <item>
-      <title>Technical Talks</title>
-      <link>/posts/talklisting/</link>
-      <pubDate>Fri, 05 Jul 2019 13:55:19 -0400</pubDate>
-      
-      <guid>/posts/talklisting/</guid>
-      <description>Here&amp;rsquo;s a listing of technical talks I&amp;rsquo;ve done in the past:
-Polyhack March 2018 - Simple, Minimal, Production-Ready RPC in Golang with Twirp Polyhack July 2018 - Trippy triangles with ThreeJS TorontoJS Workshop November 2018 - Building a penrose triangle in ThreeJS GoTO October 2018 - Writing Slackbots With Goroutines MelbJS 2014 - Meteor 101 Decompress AU 2014 </description>
-    </item>
-    
-    <item>
-      <title>Writing Slackbots With Goroutines</title>
-      <link>/posts/slackbots/slackbots/</link>
-      <pubDate>Thu, 12 Jul 2018 13:20:19 -0400</pubDate>
-      
-      <guid>/posts/slackbots/slackbots/</guid>
-      <description>It all started with a meme.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on Zach Goldstein</title><link>/posts/</link><description>Recent content in Posts on Zach Goldstein</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 22 Sep 2022 12:22:38 -0400</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml"/><item><title>MechaTarot - The Self-Serve Tarot Machine</title><link>/posts/mechatarot/mechatarot/</link><pubDate>Thu, 22 Sep 2022 12:22:38 -0400</pubDate><guid>/posts/mechatarot/mechatarot/</guid><description>The Inciting Incident So What Is This? Kicking Things Off Thermal Printer Bitamp Adventures Moving To Protoboard Mechanical Design The Cards Protoboard To PCB The Event What’s Next For This Project? This summer, I built a fun little machine that does Tarot readings! This is the story of how it came to be, warts and all. I learned a ton about how to piece together a project spanning mechanical and electrical systems.</description></item><item><title>Work Experience</title><link>/posts/previouswork/</link><pubDate>Fri, 05 Jul 2019 15:27:11 -0400</pubDate><guid>/posts/previouswork/</guid><description>Toptal - Software Engineer Sep 2016 – Ongoing Architected earthquake detection systems for Rio Tinto&amp;rsquo;s Mongolian mine Oyu Tolgoi, one of the largest mines in the world Worked directly with seismologists and on-site personel to build python pipelines deployed on kubernetes Drove the creation of a new revenue stream forjuice bar chain puregreen by building full stack system to create, manage, and execute subscriptions Used django, react, and redux. Integrated directly with payment provider and distribution partner https://www.</description></item><item><title>Technical Talks</title><link>/posts/talklisting/</link><pubDate>Fri, 05 Jul 2019 13:55:19 -0400</pubDate><guid>/posts/talklisting/</guid><description>Here&amp;rsquo;s a listing of technical talks I&amp;rsquo;ve done in the past:
+Polyhack March 2018 - Simple, Minimal, Production-Ready RPC in Golang with Twirp Polyhack July 2018 - Trippy triangles with ThreeJS TorontoJS Workshop November 2018 - Building a penrose triangle in ThreeJS GoTO October 2018 - Writing Slackbots With Goroutines MelbJS 2014 - Meteor 101 Decompress AU 2014</description></item><item><title>Writing Slackbots With Goroutines</title><link>/posts/slackbots/slackbots/</link><pubDate>Thu, 12 Jul 2018 13:20:19 -0400</pubDate><guid>/posts/slackbots/slackbots/</guid><description>It all started with a meme.
 This one involved created an insult from everybody’s favorite abusive television chef, Gordon Ramsay, by picking a value from three columns.
-First, you take your month of birth and match it up with an aggressive statement. So let’s say you were born in November, your statement would be “Get a Grip!”. Then take the first letter of your first name and do the same. If your name is Sam, then the next part would be “You Proud”.</description>
-    </item>
-    
-    <item>
-      <title>Simple, minimal, production-ready RPC in golang with twirp</title>
-      <link>/posts/rpctwirp/rpcwithtwirp/</link>
-      <pubDate>Tue, 12 Jun 2018 13:11:29 -0400</pubDate>
-      
-      <guid>/posts/rpctwirp/rpcwithtwirp/</guid>
-      <description>The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client &amp;amp; server code for you so you can focus on your implementations.
-Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc.</description>
-    </item>
-    
-    <item>
-      <title>Safely Carving Away a Snappy Golang Service from a Javascript Monolith</title>
-      <link>/posts/golangcarving/golangcarving/</link>
-      <pubDate>Thu, 12 Apr 2018 11:37:47 -0400</pubDate>
-      
-      <guid>/posts/golangcarving/golangcarving/</guid>
-      <description>In a 2015 post, good ol&amp;rsquo; Martin Fowler put it well:
+First, you take your month of birth and match it up with an aggressive statement. So let’s say you were born in November, your statement would be “Get a Grip!”. Then take the first letter of your first name and do the same. If your name is Sam, then the next part would be “You Proud”.</description></item><item><title>Simple, minimal, production-ready RPC in golang with twirp</title><link>/posts/rpctwirp/rpcwithtwirp/</link><pubDate>Tue, 12 Jun 2018 13:11:29 -0400</pubDate><guid>/posts/rpctwirp/rpcwithtwirp/</guid><description>The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client &amp;amp; server code for you so you can focus on your implementations.
+Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc.</description></item><item><title>Safely Carving Away a Snappy Golang Service from a Javascript Monolith</title><link>/posts/golangcarving/golangcarving/</link><pubDate>Thu, 12 Apr 2018 11:37:47 -0400</pubDate><guid>/posts/golangcarving/golangcarving/</guid><description>In a 2015 post, good ol&amp;rsquo; Martin Fowler put it well:
 Almost all the successful microservice stories have started with a monolith that got too big and was broken up (https://martinfowler.com/bliki/MonolithFirst.html)
-So what does that process look like? In this post, we&amp;rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&amp;rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp.</description>
-    </item>
-    
-  </channel>
-</rss>
+So what does that process look like? In this post, we&amp;rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&amp;rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp.</description></item></channel></rss>

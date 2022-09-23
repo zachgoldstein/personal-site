@@ -1,304 +1,121 @@
-<!doctype html>
-<html lang="en-us">
-  <head>
-    <title>Simple, minimal, production-ready RPC in golang with twirp // Zach Goldstein</title>
-    <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.103.1" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="author" content="Zach Goldstein" />
-    <meta name="description" content="" />
-    
-    <link rel="stylesheet" href="/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css" />
-  <style>
-    .align-left {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      float: left;
-    }
-    .align-right {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      float: right;
-    }
-    .image-block {
-      display: inline-block;
-      border: 1px solid red;
-      padding: 1rem 1rem;
-      vertical-align: middle;
-    }
-    .block-right {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      display: block;
-    }
-
-    .post-content #TableOfContents ul{
-      list-style-type: none;
-    }
-    .center {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      width: 50%;
-    }
-  </style>
-  
-
-    
-    <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Simple, minimal, production-ready RPC in golang with twirp"/>
-<meta name="twitter:description" content="The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client &amp; server code for you so you can focus on your implementations.
-Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc."/>
-
-    <meta property="og:title" content="Simple, minimal, production-ready RPC in golang with twirp" />
-<meta property="og:description" content="The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client &amp; server code for you so you can focus on your implementations.
-Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="/posts/rpctwirp/rpcwithtwirp/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2018-06-12T13:11:29-04:00" />
-<meta property="article:modified_time" content="2018-06-12T13:11:29-04:00" />
-
-
-
-  </head>
-  <body>
-    <header class="app-header">
-      <a href=""><img class="app-header-avatar" src="/zachGoldstein.png" alt="Zach Goldstein" /></a>
-      <h1>Zach Goldstein</h1>
-      <p>zachgold at gmail dot com ;)</p>
-        <p>
-            Organising:
-            <br>
-            <a href="https://www.meetup.com/polyhackTO/" class="link dim underline">Polyhack</a>
-            <br>
-            <a href="https://www.meetup.com/go-toronto/" class="link dim underline">GoTo</a>
-            <br>
-            <a href="http://gocon.ca" class="link dim underline">Gocon Canada</a>
-        </p>
-        <p><a href="/posts/talklisting/" class="link dim underline">Tech Talks</a></p>
-        <p><a href="/posts/previouswork/" class="link dim underline">Previous Work</a></p>
-      <div class="app-header-social">
-        
-          <a target="_blank" href="https://github.com/zachgoldstein"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github">
-  <title>github</title>
-  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-</svg></a>
-        
-          <a target="_blank" href="https://twitter.com/whatthezach"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter">
-  <title>twitter</title>
-  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
-</svg></a>
-        
-          <a target="_blank" href="https://www.linkedin.com/in/zach-goldstein-90489a5/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin">
-  <title>linkedin</title>
-  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle>
-</svg></a>
-        
-      </div>
-    </header>
-    
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-
-      gtag('config', 'G-G6MTBYH8WC');
-    </script>
-    <main class="app-container">
-      
-<article class="post">
-    <header class="post-header">
-        <h1 class="post-title">Simple, minimal, production-ready RPC in golang with twirp</h1>
-        <div class="post-meta">
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
-  <title>calendar</title>
-  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-</svg>
-                Jun 12, 2018
-            </div>
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
-  <title>clock</title>
-  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-</svg>
-                6 min read
-            </div></div>
-    </header>
-    <div class="post-content">
-        <p>The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client &amp; server code for you so you can focus on your implementations.</p>
-<p>Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc. As a counter to this, some glorious Twitch engineers have recently open-sourced a much more minimal library called Twirp. In this post, we’re going to go through a quick example of how to use this library in go, along with a brief description of when you might want to use it over the heavier options. For a more in-depth post on the library, check out the release blog post here: <a href="https://blog.twitch.tv/twirp-a-sweet-new-rpc-framework-for-go-5f2febbf35f">https://blog.twitch.tv/twirp-a-sweet-new-rpc-framework-for-go-5f2febbf35f</a></p>
-<p>So! Off we go to the world of simplistic examples.</p>
-<p>In twirp, we start our journey with a protocol buffer (protobuf) file. This outlines the service endpoints and request response objects in a language-agnostic way.</p>
-<p>Fist start by installing twirp and protobuf:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>get github.com/twitchtv/twirp/protoc-gen-twirp
-</span></span><span style="display:flex;"><span>go get github.com/golang/protobuf/protoc-gen-go</span></span></code></pre></div>
-<p>Inspired by the existential dread of universal paperclips (<a href="http://www.decisionproblem.com/paperclips/index2.html)">http://www.decisionproblem.com/paperclips/index2.html)</a>, we’ll make a simple protobuf definition for a service that does three silly things:</p>
-<ul>
-<li>Get the current number of paperclips</li>
-<li>Increment the number of paperclips</li>
-<li>Calculate how close we are to the death of the universe.</li>
-<li>Here’s what that looks like in protobuf:</li>
-</ul>
-<p>We’ll save this to rpc/service.proto. And now we can generate our client/server code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> twirp<span style="color:#f92672">.</span>paperclips;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">option</span> go_package <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;rpc&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">// UniversalPaperclips service creates paperclips and calculates existential dread.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">service</span> UniversalPaperclips {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> GetPaperclips(Empty) <span style="color:#66d9ef">returns</span> (Paperclips);<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> IncrementPaperclips(Size) <span style="color:#66d9ef">returns</span> (Empty);<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> CalculateUniverseLifespan(Empty) <span style="color:#66d9ef">returns</span> (Dread);<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Size</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">int32</span> paperclips <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; <span style="color:#75715e">// must be &gt; 0
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Paperclips</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">int32</span> paperclips <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Dread</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">int32</span> paperclips <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> universeLifespan <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Empty</span> {}</span></span></code></pre></div>
-<p>This will create two files:</p>
-<ul>
-<li>rpc/service.pb.go (Containing our message definitions)</li>
-<li>rpc/service.twirp.go (Containing our service functions and interfaces)</li>
-</ul>
-<p>We’ll now create our server implementation at /paperclipserver/server.go:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">paperclipserver</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Server implements the UniversalPaperclips service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">PaperClips</span> <span style="color:#66d9ef">int32</span>
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewServer creates an instance of our server
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServer</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">PaperClips</span>: <span style="color:#ae81ff">1</span>,
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// GetPaperclips returns the current paperclip count
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">GetPaperclips</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">empty</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Empty</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Paperclips</span>, <span style="color:#66d9ef">error</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Paperclips</span>{
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Paperclips</span>: <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">PaperClips</span>,
-</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// IncrementPaperclips increments the paperclip count
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">IncrementPaperclips</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">size</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Size</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Empty</span>, <span style="color:#66d9ef">error</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">PaperClips</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">size</span>.<span style="color:#a6e22e">Paperclips</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Empty</span>{}, <span style="color:#66d9ef">nil</span>
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// CalculateUniverseLifespan calulcates the universe&#39;s lifespan and returns some marginally relaxing value
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">CalculateUniverseLifespan</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">empty</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Empty</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Dread</span>, <span style="color:#66d9ef">error</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Dread</span>{
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Paperclips</span>:       <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">PaperClips</span>,
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">UniverseLifespan</span>: <span style="color:#e6db74">&#34;42&#34;</span>,
-</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span></span></span></code></pre></div>
-<p>So the benefits here are pretty awesome. We didn’t write a single line of serialization code and had a nice, clear interface that was generated for us to code against. Our model types (called messages) were also generated, and we didn’t need to bother pulling the object bodies out of response objects. If we miss a field or forget to implement some function, we’ll see failures at compile time that will prevent incorrect code from getting into a binary.</p>
-<p>So pretty cool right? Usage of the server looks quite clean as well. Our main.go file is:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">main</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net/http&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/zachgoldstein/twirpPaperclips/paperclipserver&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Starting Universal Paperclip Service on :6666&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">paperclipserver</span>.<span style="color:#a6e22e">NewServer</span>()
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">twirpHandler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">NewUniversalPaperclipsServer</span>(<span style="color:#a6e22e">server</span>, <span style="color:#66d9ef">nil</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:6666&#34;</span>, <span style="color:#a6e22e">twirpHandler</span>))
-</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
-<p>We can now run our twirp RPC service with:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go run main.go</span></span></code></pre></div></p>
-<p>And we can hit it with curl:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--request <span style="color:#e6db74">&#34;POST&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>     --location <span style="color:#e6db74">&#34;http://localhost:6666/twirp/twirp.paperclips.UniversalPaperclips/GetPaperclips&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>     --header <span style="color:#e6db74">&#34;Content-Type:application/json&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>     --data <span style="color:#e6db74">&#39;{}&#39;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>     --verbose</span></span></code></pre></div>
-<p>Which returns:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;paperclips&#34;</span>:6<span style="color:#f92672">}</span></span></span></code></pre></div></p>
-<p>Instead of REST GET/POST/etc. semantics, every twirp request is POST. You also have the opportunity to take advantage of protobuf’s binary serialization instead of JSON.</p>
-<p>If you want to issue a request to this service, you also have generated client code you can take advantage of:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">main</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net/http&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Client Example for Universal Paperclip Service&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">NewUniversalPaperclipsProtobufClient</span>(<span style="color:#e6db74">&#34;http://localhost:6666&#34;</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{})
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">IncrementPaperclips</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">Size</span>{<span style="color:#a6e22e">Paperclips</span>: <span style="color:#ae81ff">5</span>})
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">paperclips</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetPaperclips</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">Empty</span>{})
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Paperclips: &#34;</span>, <span style="color:#a6e22e">paperclips</span>.<span style="color:#a6e22e">String</span>())
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">dread</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">CalculateUniverseLifespan</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">Empty</span>{})
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Dread: &#34;</span>, <span style="color:#a6e22e">dread</span>.<span style="color:#a6e22e">String</span>())
-</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
-<p>Running this outputs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Example <span style="color:#66d9ef">for</span> Universal Paperclip Service
-</span></span><span style="display:flex;"><span>Paperclips:  paperclips:6
-</span></span><span style="display:flex;"><span>Dread:  paperclips:6 universeLifespan:<span style="color:#e6db74">&#34;42&#34;</span></span></span></code></pre></div>
-<p>You can see this full example online at <a href="https://github.com/zachgoldstein/twirpPaperclips">https://github.com/zachgoldstein/twirpPaperclips</a>.</p>
-<p>The question still remains — why use this library when we have pretty fantastic, Google-supported projects like grpc or gokit?</p>
-<p>To sum it up pretty succinctly, gRPC is a much heavier library, and goKit doesn’t really include enough to do the client/server code generation we see here. Twirp is ideal for use cases where you want to minimize new dependencies and sync possibly out-of-date client/server code.</p>
-<p>gRPC requires you use http/2, which might not be feasible for you depending on your use case. It also has a heavy runtime that implements its own version of the built-in http library. This allows it to do some pretty cool stuff, but it also means you need to keep that library updated and in sync with the generated client/server code. Twirp has chosen to not do this, and instead generates heavier client/server code that’s less likely to encounter breaking changes when it’s much older than the latest version of the library itself. If your use case allows you to control many of the services implementing RPC in your system, then syncing issues might not be that big of a deal, and gRPC is worth a good look.</p>
-<p>goKit, on the other hand, is not all that opinionated about how you do your RPC. It outlines an approach to building RPC services and includes a bunch of great tools for logging and instrumentation, but it stops short of enforcing protobuf usage and generated code. It’s pretty much as it sounds — more of a “kit” than an RPC-specific library. If you’re wary of generated code and want to roll many of the RPC mechanisms yourself, goKit gives you some great patterns to help structure those efforts.</p>
-<p>I hope this post helps you in your journey towards service-oriented nirvana. Thanks for reading and thanks to the team at Twitch for releasing this excellent library!</p>
-<hr>
-<p>Originally published at x-team.com on February 5, 2018</p>
-
-        
-    </div>
-    <div class="post-footer">
-        
-    </div>
-</article>
-
-    </main>
-  </body>
-</html>
+<!doctype html><html lang=en-us><head><title>Simple, minimal, production-ready RPC in golang with twirp // Zach Goldstein</title><meta charset=utf-8><meta name=generator content="Hugo 0.103.1"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Zach Goldstein"><meta name=description content><link rel=stylesheet href=/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css><style>.align-left{max-width:50%;width:auto\9*0.3;height:auto;float:left}.align-right{max-width:50%;width:auto\9*0.3;height:auto;float:right}.image-block{display:inline-block;border:1px solid red;padding:1rem;vertical-align:middle}.block-right{max-width:50%;width:auto\9*0.3;height:auto;display:block}.post-content #TableOfContents ul{list-style-type:none}.center{display:block;margin-left:auto;margin-right:auto;width:50%}</style><meta name=twitter:card content="summary"><meta name=twitter:title content="Simple, minimal, production-ready RPC in golang with twirp"><meta name=twitter:description content="The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client & server code for you so you can focus on your implementations.
+Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc."><meta property="og:title" content="Simple, minimal, production-ready RPC in golang with twirp"><meta property="og:description" content="The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client & server code for you so you can focus on your implementations.
+Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc."><meta property="og:type" content="article"><meta property="og:url" content="/posts/rpctwirp/rpcwithtwirp/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2018-06-12T13:11:29-04:00"><meta property="article:modified_time" content="2018-06-12T13:11:29-04:00"></head><body><header class=app-header><a href><img class=app-header-avatar src=/zachGoldstein.png alt="Zach Goldstein"></a><h1>Zach Goldstein</h1><p>zachgold at gmail dot com ;)</p><p>Organising:<br><a href=https://www.meetup.com/polyhackTO/ class="link dim underline">Polyhack</a><br><a href=https://www.meetup.com/go-toronto/ class="link dim underline">GoTo</a><br><a href=http://gocon.ca class="link dim underline">Gocon Canada</a></p><p><a href=/posts/talklisting/ class="link dim underline">Tech Talks</a></p><p><a href=/posts/previouswork/ class="link dim underline">Previous Work</a></p><div class=app-header-social><a target=_blank href=https://github.com/zachgoldstein><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github"><title>github</title><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg></a><a target=_blank href=https://twitter.com/whatthezach><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter"><title>twitter</title><path d="M23 3a10.9 10.9.0 01-3.14 1.53 4.48 4.48.0 00-7.86 3v1A10.66 10.66.0 013 4s-4 9 5 13a11.64 11.64.0 01-7 2c9 5 20 0 20-11.5a4.5 4.5.0 00-.08-.83A7.72 7.72.0 0023 3z"/></svg></a><a target=_blank href=https://www.linkedin.com/in/zach-goldstein-90489a5/><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin"><title>linkedin</title><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></header><script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G6MTBYH8WC")</script><main class=app-container><article class=post><header class=post-header><h1 class=post-title>Simple, minimal, production-ready RPC in golang with twirp</h1><div class=post-meta><div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar"><title>calendar</title><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jun 12, 2018</div><div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock"><title>clock</title><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>6 min read</div></div></header><div class=post-content><p>The more code you write, the greater the surface for potential bugs. In traditional REST APIs, you often get stuck writing lots of routing and serialization code, which can often get out of sync as your application grows. RPC (Remote Procedure Call) libraries come to the rescue here, generating a lot of this client & server code for you so you can focus on your implementations.</p><p>Previously, RPC usage in golang was centered around a couple larger libraries, gokit and grpc. As a counter to this, some glorious Twitch engineers have recently open-sourced a much more minimal library called Twirp. In this post, we’re going to go through a quick example of how to use this library in go, along with a brief description of when you might want to use it over the heavier options. For a more in-depth post on the library, check out the release blog post here: <a href=https://blog.twitch.tv/twirp-a-sweet-new-rpc-framework-for-go-5f2febbf35f>https://blog.twitch.tv/twirp-a-sweet-new-rpc-framework-for-go-5f2febbf35f</a></p><p>So! Off we go to the world of simplistic examples.</p><p>In twirp, we start our journey with a protocol buffer (protobuf) file. This outlines the service endpoints and request response objects in a language-agnostic way.</p><p>Fist start by installing twirp and protobuf:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>get github.com/twitchtv/twirp/protoc-gen-twirp
+</span></span><span style=display:flex><span>go get github.com/golang/protobuf/protoc-gen-go</span></span></code></pre></div><p>Inspired by the existential dread of universal paperclips (<a href=http://www.decisionproblem.com/paperclips/index2.html)>http://www.decisionproblem.com/paperclips/index2.html)</a>, we’ll make a simple protobuf definition for a service that does three silly things:</p><ul><li>Get the current number of paperclips</li><li>Increment the number of paperclips</li><li>Calculate how close we are to the death of the universe.</li><li>Here’s what that looks like in protobuf:</li></ul><p>We’ll save this to rpc/service.proto. And now we can generate our client/server code:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-protobuf data-lang=protobuf><span style=display:flex><span>syntax <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;proto3&#34;</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#f92672>package</span> twirp<span style=color:#f92672>.</span>paperclips;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>option</span> go_package <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;rpc&#34;</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e>// UniversalPaperclips service creates paperclips and calculates existential dread.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>service</span> UniversalPaperclips {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>rpc</span> GetPaperclips(Empty) <span style=color:#66d9ef>returns</span> (Paperclips);<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>rpc</span> IncrementPaperclips(Size) <span style=color:#66d9ef>returns</span> (Empty);<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>rpc</span> CalculateUniverseLifespan(Empty) <span style=color:#66d9ef>returns</span> (Dread);<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Size</span> {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>int32</span> paperclips <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>; <span style=color:#75715e>// must be &gt; 0
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Paperclips</span> {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>int32</span> paperclips <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Dread</span> {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>int32</span> paperclips <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>string</span> universeLifespan <span style=color:#f92672>=</span> <span style=color:#ae81ff>2</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Empty</span> {}</span></span></code></pre></div><p>This will create two files:</p><ul><li>rpc/service.pb.go (Containing our message definitions)</li><li>rpc/service.twirp.go (Containing our service functions and interfaces)</li></ul><p>We’ll now create our server implementation at /paperclipserver/server.go:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#a6e22e>paperclipserver</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;context&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>pb</span> <span style=color:#e6db74>&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Server implements the UniversalPaperclips service
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Server</span> <span style=color:#66d9ef>struct</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>PaperClips</span> <span style=color:#66d9ef>int32</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// NewServer creates an instance of our server
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>NewServer</span>() <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>Server</span>{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>PaperClips</span>: <span style=color:#ae81ff>1</span>,
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// GetPaperclips returns the current paperclip count
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>s</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span>) <span style=color:#a6e22e>GetPaperclips</span>(<span style=color:#a6e22e>ctx</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Context</span>, <span style=color:#a6e22e>empty</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Empty</span>) (<span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Paperclips</span>, <span style=color:#66d9ef>error</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Paperclips</span>{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>Paperclips</span>: <span style=color:#a6e22e>s</span>.<span style=color:#a6e22e>PaperClips</span>,
+</span></span><span style=display:flex><span>    }, <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// IncrementPaperclips increments the paperclip count
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>s</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span>) <span style=color:#a6e22e>IncrementPaperclips</span>(<span style=color:#a6e22e>ctx</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Context</span>, <span style=color:#a6e22e>size</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Size</span>) (<span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Empty</span>, <span style=color:#66d9ef>error</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>s</span>.<span style=color:#a6e22e>PaperClips</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>size</span>.<span style=color:#a6e22e>Paperclips</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Empty</span>{}, <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// CalculateUniverseLifespan calulcates the universe&#39;s lifespan and returns some marginally relaxing value
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>s</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span>) <span style=color:#a6e22e>CalculateUniverseLifespan</span>(<span style=color:#a6e22e>ctx</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Context</span>, <span style=color:#a6e22e>empty</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Empty</span>) (<span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Dread</span>, <span style=color:#66d9ef>error</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Dread</span>{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>Paperclips</span>:       <span style=color:#a6e22e>s</span>.<span style=color:#a6e22e>PaperClips</span>,
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>UniverseLifespan</span>: <span style=color:#e6db74>&#34;42&#34;</span>,
+</span></span><span style=display:flex><span>    }, <span style=color:#66d9ef>nil</span></span></span></code></pre></div><p>So the benefits here are pretty awesome. We didn’t write a single line of serialization code and had a nice, clear interface that was generated for us to code against. Our model types (called messages) were also generated, and we didn’t need to bother pulling the object bodies out of response objects. If we miss a field or forget to implement some function, we’ll see failures at compile time that will prevent incorrect code from getting into a binary.</p><p>So pretty cool right? Usage of the server looks quite clean as well. Our main.go file is:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#a6e22e>main</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;log&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;net/http&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;github.com/zachgoldstein/twirpPaperclips/paperclipserver&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;Starting Universal Paperclip Service on :6666&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>server</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>paperclipserver</span>.<span style=color:#a6e22e>NewServer</span>()
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>twirpHandler</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>NewUniversalPaperclipsServer</span>(<span style=color:#a6e22e>server</span>, <span style=color:#66d9ef>nil</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>http</span>.<span style=color:#a6e22e>ListenAndServe</span>(<span style=color:#e6db74>&#34;:6666&#34;</span>, <span style=color:#a6e22e>twirpHandler</span>))
+</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>We can now run our twirp RPC service with:<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>go run main.go</span></span></code></pre></div></p><p>And we can hit it with curl:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>--request <span style=color:#e6db74>&#34;POST&#34;</span> <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>     --location <span style=color:#e6db74>&#34;http://localhost:6666/twirp/twirp.paperclips.UniversalPaperclips/GetPaperclips&#34;</span> <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>     --header <span style=color:#e6db74>&#34;Content-Type:application/json&#34;</span> <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>     --data <span style=color:#e6db74>&#39;{}&#39;</span> <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>     --verbose</span></span></code></pre></div><p>Which returns:<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#f92672>{</span><span style=color:#e6db74>&#34;paperclips&#34;</span>:6<span style=color:#f92672>}</span></span></span></code></pre></div></p><p>Instead of REST GET/POST/etc. semantics, every twirp request is POST. You also have the opportunity to take advantage of protobuf’s binary serialization instead of JSON.</p><p>If you want to issue a request to this service, you also have generated client code you can take advantage of:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#a6e22e>main</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;context&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;net/http&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;github.com/zachgoldstein/twirpPaperclips/rpc&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#e6db74>&#34;Client Example for Universal Paperclip Service&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>client</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>NewUniversalPaperclipsProtobufClient</span>(<span style=color:#e6db74>&#34;http://localhost:6666&#34;</span>, <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>http</span>.<span style=color:#a6e22e>Client</span>{})
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>client</span>.<span style=color:#a6e22e>IncrementPaperclips</span>(<span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Background</span>(), <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>Size</span>{<span style=color:#a6e22e>Paperclips</span>: <span style=color:#ae81ff>5</span>})
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#a6e22e>err</span>.<span style=color:#a6e22e>Error</span>())
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>paperclips</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>client</span>.<span style=color:#a6e22e>GetPaperclips</span>(<span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Background</span>(), <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>Empty</span>{})
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#a6e22e>err</span>.<span style=color:#a6e22e>Error</span>())
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#e6db74>&#34;Paperclips: &#34;</span>, <span style=color:#a6e22e>paperclips</span>.<span style=color:#a6e22e>String</span>())
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>dread</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>client</span>.<span style=color:#a6e22e>CalculateUniverseLifespan</span>(<span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Background</span>(), <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>Empty</span>{})
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#a6e22e>err</span>.<span style=color:#a6e22e>Error</span>())
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Println</span>(<span style=color:#e6db74>&#34;Dread: &#34;</span>, <span style=color:#a6e22e>dread</span>.<span style=color:#a6e22e>String</span>())
+</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>Running this outputs:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>Example <span style=color:#66d9ef>for</span> Universal Paperclip Service
+</span></span><span style=display:flex><span>Paperclips:  paperclips:6
+</span></span><span style=display:flex><span>Dread:  paperclips:6 universeLifespan:<span style=color:#e6db74>&#34;42&#34;</span></span></span></code></pre></div><p>You can see this full example online at <a href=https://github.com/zachgoldstein/twirpPaperclips>https://github.com/zachgoldstein/twirpPaperclips</a>.</p><p>The question still remains — why use this library when we have pretty fantastic, Google-supported projects like grpc or gokit?</p><p>To sum it up pretty succinctly, gRPC is a much heavier library, and goKit doesn’t really include enough to do the client/server code generation we see here. Twirp is ideal for use cases where you want to minimize new dependencies and sync possibly out-of-date client/server code.</p><p>gRPC requires you use http/2, which might not be feasible for you depending on your use case. It also has a heavy runtime that implements its own version of the built-in http library. This allows it to do some pretty cool stuff, but it also means you need to keep that library updated and in sync with the generated client/server code. Twirp has chosen to not do this, and instead generates heavier client/server code that’s less likely to encounter breaking changes when it’s much older than the latest version of the library itself. If your use case allows you to control many of the services implementing RPC in your system, then syncing issues might not be that big of a deal, and gRPC is worth a good look.</p><p>goKit, on the other hand, is not all that opinionated about how you do your RPC. It outlines an approach to building RPC services and includes a bunch of great tools for logging and instrumentation, but it stops short of enforcing protobuf usage and generated code. It’s pretty much as it sounds — more of a “kit” than an RPC-specific library. If you’re wary of generated code and want to roll many of the RPC mechanisms yourself, goKit gives you some great patterns to help structure those efforts.</p><p>I hope this post helps you in your journey towards service-oriented nirvana. Thanks for reading and thanks to the team at Twitch for releasing this excellent library!</p><hr><p>Originally published at x-team.com on February 5, 2018</p></div><div class=post-footer></div></article></main></body></html>

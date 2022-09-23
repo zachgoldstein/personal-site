@@ -1,403 +1,202 @@
-<!doctype html>
-<html lang="en-us">
-  <head>
-    <title>Safely Carving Away a Snappy Golang Service from a Javascript Monolith // Zach Goldstein</title>
-    <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.103.1" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="author" content="Zach Goldstein" />
-    <meta name="description" content="" />
-    
-    <link rel="stylesheet" href="/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css" />
-  <style>
-    .align-left {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      float: left;
-    }
-    .align-right {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      float: right;
-    }
-    .image-block {
-      display: inline-block;
-      border: 1px solid red;
-      padding: 1rem 1rem;
-      vertical-align: middle;
-    }
-    .block-right {
-      max-width: 50%;
-      width: auto\9*0.3;  
-      height: auto;
-      display: block;
-    }
-
-    .post-content #TableOfContents ul{
-      list-style-type: none;
-    }
-    .center {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      width: 50%;
-    }
-  </style>
-  
-
-    
-    <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Safely Carving Away a Snappy Golang Service from a Javascript Monolith"/>
-<meta name="twitter:description" content="In a 2015 post, good ol&rsquo; Martin Fowler put it well:
+<!doctype html><html lang=en-us><head><title>Safely Carving Away a Snappy Golang Service from a Javascript Monolith // Zach Goldstein</title><meta charset=utf-8><meta name=generator content="Hugo 0.103.1"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Zach Goldstein"><meta name=description content><link rel=stylesheet href=/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css><style>.align-left{max-width:50%;width:auto\9*0.3;height:auto;float:left}.align-right{max-width:50%;width:auto\9*0.3;height:auto;float:right}.image-block{display:inline-block;border:1px solid red;padding:1rem;vertical-align:middle}.block-right{max-width:50%;width:auto\9*0.3;height:auto;display:block}.post-content #TableOfContents ul{list-style-type:none}.center{display:block;margin-left:auto;margin-right:auto;width:50%}</style><meta name=twitter:card content="summary"><meta name=twitter:title content="Safely Carving Away a Snappy Golang Service from a Javascript Monolith"><meta name=twitter:description content="In a 2015 post, good ol&rsquo; Martin Fowler put it well:
 Almost all the successful microservice stories have started with a monolith that got too big and was broken up (https://martinfowler.com/bliki/MonolithFirst.html)
-So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp."/>
-
-    <meta property="og:title" content="Safely Carving Away a Snappy Golang Service from a Javascript Monolith" />
-<meta property="og:description" content="In a 2015 post, good ol&rsquo; Martin Fowler put it well:
+So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp."><meta property="og:title" content="Safely Carving Away a Snappy Golang Service from a Javascript Monolith"><meta property="og:description" content="In a 2015 post, good ol&rsquo; Martin Fowler put it well:
 Almost all the successful microservice stories have started with a monolith that got too big and was broken up (https://martinfowler.com/bliki/MonolithFirst.html)
-So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="/posts/golangcarving/golangcarving/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2018-04-12T11:37:47-04:00" />
-<meta property="article:modified_time" content="2018-04-12T11:37:47-04:00" />
-
-
-
-  </head>
-  <body>
-    <header class="app-header">
-      <a href=""><img class="app-header-avatar" src="/zachGoldstein.png" alt="Zach Goldstein" /></a>
-      <h1>Zach Goldstein</h1>
-      <p>zachgold at gmail dot com ;)</p>
-        <p>
-            Organising:
-            <br>
-            <a href="https://www.meetup.com/polyhackTO/" class="link dim underline">Polyhack</a>
-            <br>
-            <a href="https://www.meetup.com/go-toronto/" class="link dim underline">GoTo</a>
-            <br>
-            <a href="http://gocon.ca" class="link dim underline">Gocon Canada</a>
-        </p>
-        <p><a href="/posts/talklisting/" class="link dim underline">Tech Talks</a></p>
-        <p><a href="/posts/previouswork/" class="link dim underline">Previous Work</a></p>
-      <div class="app-header-social">
-        
-          <a target="_blank" href="https://github.com/zachgoldstein"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github">
-  <title>github</title>
-  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-</svg></a>
-        
-          <a target="_blank" href="https://twitter.com/whatthezach"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter">
-  <title>twitter</title>
-  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
-</svg></a>
-        
-          <a target="_blank" href="https://www.linkedin.com/in/zach-goldstein-90489a5/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin">
-  <title>linkedin</title>
-  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle>
-</svg></a>
-        
-      </div>
-    </header>
-    
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-
-      gtag('config', 'G-G6MTBYH8WC');
-    </script>
-    <main class="app-container">
-      
-<article class="post">
-    <header class="post-header">
-        <h1 class="post-title">Safely Carving Away a Snappy Golang Service from a Javascript Monolith</h1>
-        <div class="post-meta">
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
-  <title>calendar</title>
-  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-</svg>
-                Apr 12, 2018
-            </div>
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
-  <title>clock</title>
-  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-</svg>
-                9 min read
-            </div></div>
-    </header>
-    <div class="post-content">
-        <p>In a 2015 post, good ol&rsquo; Martin Fowler put it well:</p>
-<blockquote>
-<p>Almost all the successful microservice stories have started with a monolith that got too big and was broken up
- (<a href="https://martinfowler.com/bliki/MonolithFirst.html">https://martinfowler.com/bliki/MonolithFirst.html</a>)</p>
-</blockquote>
-<p>So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp. The general benefits of service-oriented architectures are a bit assumed here, but if you&rsquo;d like to learn about those justifications in more detail, I&rsquo;d highly suggest another Fowler article: <a href="https://martinfowler.com/articles/microservices.html#MicroservicesAndSoa">https://martinfowler.com/articles/microservices.html#MicroservicesAndSoa</a></p>
-<p>We&rsquo;ll start with a node server that does something painfully simple. It has one endpoint that sums up random numbers:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> = <span style="color:#a6e22e">require</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">express</span><span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> = <span style="color:#a6e22e">require</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">body</span><span style="color:#f92672">-</span><span style="color:#a6e22e">parser</span><span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> = <span style="color:#a6e22e">express</span>();
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">json</span>());
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">express</span>.<span style="color:#a6e22e">json</span>());
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">/</span><span style="color:#a6e22e">Count</span><span style="color:#960050;background-color:#1e0010">&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">let</span> <span style="color:#a6e22e">sum</span> = <span style="color:#ae81ff">0</span>;
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">timesToIterate</span> = <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">times</span>;
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">i</span> = <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#a6e22e">timesToIterate</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sum</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">Math</span>.<span style="color:#a6e22e">round</span>(<span style="color:#a6e22e">Math</span>.<span style="color:#a6e22e">random</span>() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>);
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">`Counted to ${sum} \n`</span>);
-</span></span><span style="display:flex;"><span>})
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>, () =&gt; <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">BaseApp</span> <span style="color:#a6e22e">app</span> <span style="color:#a6e22e">listening</span> <span style="color:#a6e22e">on</span> <span style="color:#a6e22e">port</span> <span style="color:#ae81ff">3000</span>!<span style="color:#960050;background-color:#1e0010">&#39;</span>));</span></span></code></pre></div>
-<p>This is our representation of a monolithic service, so indulge me while I imagine this toy app as if it was a huge system with all the usual moving pieces. Let&rsquo;s say that this calculation is eating up our server performance, and we want to build out a separate system that&rsquo;s engineered to solve only this problem in a very efficient way. It&rsquo;s really important to understand that CPU performance is one of many reasons to carve away a service. For us here, it serves as a really great way to illustrate how the system is going to change, but generally, you&rsquo;ll want to look at a whole ton of other constraints.</p>
-<p>Some are technical, like memory usage, network throughput, or file I/O, while others could be purely social. Sometimes the most effective way for a lot of developers to work well in parallel is to separate them into smaller, service-focused groups where you establish clear boundaries between them and domain-specific targets.</p>
-<p>So the first step here is to really understand your bottlenecks. We&rsquo;ve created an artificial one in the form of a CPU intensive task, summing up random numbers. Before we get too far, let&rsquo;s do some quick load testing to get an idea of what our performance looks like.
-We&rsquo;ll be using a tool called artillery (<a href="https://artillery.io">https://artillery.io</a>) in this post to do our load testing.</p>
-<p>It&rsquo;s a node script, so we npm install it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm install -g artillery</span></span></code></pre></div>
-<p>One-off quick tests can be done with the quick command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>artillery quick --count <span style="color:#ae81ff">10</span> -n <span style="color:#ae81ff">20</span> https://artillery.io/</span></span></code></pre></div>
-<p>In our app, we need to post with some data, so we&rsquo;ll create a config file called baseAppLoadTest.yml</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yml" data-lang="yml"><span style="display:flex;"><span><span style="color:#f92672">config</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">target</span>: <span style="color:#e6db74">&#34;http://localhost:3000&#34;</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">phases</span>:
-</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">10</span>
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">arrivalRate</span>: <span style="color:#ae81ff">20</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">scenarios</span>:
-</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;Count random numbers&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">flow</span>:
-</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">post</span>:
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">url</span>: <span style="color:#e6db74">&#34;/Count&#34;</span>
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">json</span>:
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">times</span>: <span style="color:#ae81ff">10000000</span></span></span></code></pre></div>
-<p>Here we&rsquo;re just hitting a local service, but in the tests shown, I&rsquo;ve actually spun up two aws instances within the same AWS region &amp; AZ - a beefy one with a few cores where we are running our system and another small instance from which we&rsquo;re executing this load test. This avoids inconsistent results when issuing requests from a congested network like a coworking space. I learned this the hard way, but if you crank up the RPS here (arrivalRate), it&rsquo;s possible to knock your network offline.</p>
-<p>I also run htop (which is just a fancier version of top) to visualize how we&rsquo;re utilizing the cores on this instance.</p>
-<p>Running the node app and load testing:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>artillery run ./baseAppLoadTest.yml</span></span></code></pre></div>
-And the load test results:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>RPS sent: 4.64 Request latency: min: 232.7 max: 32857.7 median: 16351.4 p95: 31296.4 p99: 32614.5</span></span></code></pre></div>
-So performance is terrible. Why?
-Using htop while our node server is running, we can see it just thrashing a single CPU:</p>
-<figure><img src="/posts/golangCarving/cpuNuke.png" width="100%"/>
-</figure>
-
-<p>At high CPU loads, the Node.js event loop competes with the V8 garbage collector over CPU time, which wrecks our performance.
-If we tune down task intensity to {times:1000000}, we see that performance is actually pretty decent when we&rsquo;re not nuking a CPU:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>RPS sent: 20.04 Request latency: min: 26.5 max: 37.5 median: 27.1 p95: <span style="color:#ae81ff">28</span> p99: 30.1</span></span></code></pre></div>
-<p>So we have our bottleneck.</p>
-<p>To tackle this world-altering problem, we&rsquo;re going to create a go service using an RPC library called Twirp and protobuf, a transport protocol. But why go?And why bother with this at all?</p>
-<p>First off, our main strategy here to improve performance is going to be leveraging better concurrency primitives to let us fully utilize all of the CPU cores on a larger system. Node, python, and ruby all use a GIL to make the most out of a single core, but this GIL also means that there&rsquo;s quite a bit of additional complexity to write safe, concurrent software. We&rsquo;re going to use go because of its simple approach to concurrency and its strong profiling and benchmarking tools. We won&rsquo;t dive into those tools here, but it&rsquo;s worth mentioning that pprof and go-torch in particular are wonderful ways to understand your program better.</p>
-<p>So could we use Rust? Elixir? Erlang? Yes! But today, go is our choice du jour on our journey towards service-oriented nirvana. We&rsquo;ll be using an RPC library called Twirp (similar to gRPC but simpler) to do this. See this associated post for another example of writing go code to do this: <a href="https://x-team.com/blog/golang-rpc-twirp/">https://x-team.com/blog/golang-rpc-twirp/</a></p>
-<p>Follow the installation instructions for twirp and it&rsquo;s protobuf dependencies here: <a href="https://github.com/twitchtv/twirp#installation">https://github.com/twitchtv/twirp#installation</a></p>
-<p>We&rsquo;ll start by writing a protobuf file that describes our new service and the messages it uses.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> twirp<span style="color:#f92672">.</span>carved;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">option</span> go_package <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;rpc&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">// Carved service counts numbers very quickly.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">service</span> Carved {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> Count(Times) <span style="color:#66d9ef">returns</span> (Sum);<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Times</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">int32</span> times <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; <span style="color:#75715e">// must be &gt; 0
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Sum</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">int32</span> Sum <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}</span></span></code></pre></div>
-<p>Using twirp, we&rsquo;ll generate stubs for this service and place them in the rpc folder.</p>
-<pre tabindex="0"><code>protoc --proto_path=$GOPATH/src:. --twirp_out=./rpc --go_out=./rpc ./carvedService.proto
-</code></pre><p>Our service implementation looks like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">server</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;math/rand&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;sync&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;github.com/zachgoldstein/serviceCarving/carvedService/rpc&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Server implements the UniversalPaperclips service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span>{}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewServer creates an instance of our server
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServer</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{}
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">countMutex</span> <span style="color:#66d9ef">struct</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">count</span> <span style="color:#66d9ef">int32</span>
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// CountWorker sums of numbers based on ints placed on the jobChan,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// adding them to a mutex-protected counter when done.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CountWorker</span>(<span style="color:#a6e22e">count</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">countMutex</span>, <span style="color:#a6e22e">wg</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>, <span style="color:#a6e22e">jobChan</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">int</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">NewSource</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Unix</span>()))
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">jobChan</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">sum</span> <span style="color:#f92672">:=</span> int32(<span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">j</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
-</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">sum</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Int31n</span>(<span style="color:#ae81ff">100</span>)
-</span></span><span style="display:flex;"><span>        }
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">count</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">count</span>.<span style="color:#a6e22e">count</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">sum</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">count</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Count finds the sum of random numbers added together N times
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Count</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">times</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Times</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Sum</span>, <span style="color:#66d9ef">error</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">wg</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>{}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">jobSize</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">100000</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">numWorkers</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">5</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">countMutex</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">countMutex</span>{
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">mu</span>:    <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>{},
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">count</span>: <span style="color:#ae81ff">0</span>,
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">jobChan</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">int</span>, <span style="color:#ae81ff">100</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">numWorkers</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">CountWorker</span>(<span style="color:#a6e22e">countMutex</span>, <span style="color:#a6e22e">wg</span>, <span style="color:#a6e22e">jobChan</span>)
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">numJobs</span> <span style="color:#f92672">:=</span> int(<span style="color:#a6e22e">times</span>.<span style="color:#a6e22e">Times</span>) <span style="color:#f92672">/</span> <span style="color:#a6e22e">jobSize</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">jobSize</span> &gt; int(<span style="color:#a6e22e">times</span>.<span style="color:#a6e22e">Times</span>) {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">numJobs</span> = <span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">jobSize</span> = int(<span style="color:#a6e22e">times</span>.<span style="color:#a6e22e">Times</span>)
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">w</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">w</span> &lt; <span style="color:#a6e22e">numJobs</span>; <span style="color:#a6e22e">w</span><span style="color:#f92672">++</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">jobChan</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">jobSize</span>
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    close(<span style="color:#a6e22e">jobChan</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Sum</span>{
-</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Sum</span>: <span style="color:#a6e22e">countMutex</span>.<span style="color:#a6e22e">count</span>,
-</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
-</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
-<p>Our implementation here uses a worker pool system to safely and concurrently sum random numbers. For a more detailed discussion of the mechanics here, see <a href="https://gobyexample.com/worker-pools">https://gobyexample.com/worker-pools</a>. We&rsquo;re using worker pools to control the degree of parallelism used in our program. It&rsquo;s important to note that you can have too much parallelism, and creating excessive numbers of goroutines will cause the scheduler to have a tough time mapping them to OS threads, eating up performance. Here we use a non-trivial jobSize to make sure that each goroutine is doing a reasonable amount of work. Since we&rsquo;re summing up numbers, we also have a mutex that&rsquo;s properly synchronizing that summed value between many goroutines. We want to avoid waiting around on this lock, so the limited size of the worker pool here makes sure that the number of active goroutines using the same mutex is small and the time spent waiting for the lock is trivial.</p>
-<p>As an aside, another great little trick is to provide a go-routine scoped seed for <code>rand.Int31n()</code>. By default, go uses a globally locked pseudo-random number generator, and at high load, you can lose a lot of performance in waiting for that lock. Using go-torch, we can see this here:</p>
-<figure><img src="/posts/golangCarving/goTorch.png" width="100%"/>
-</figure>
-
-<p>Instead, you can provide a seed that&rsquo;s safe to use concurrently, which is what we do with:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">NewSource</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Unix</span>()))</span></span></code></pre></div></p>
-<p>We use this implementation in our main like so:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net/http&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/zachgoldstein/serviceCarving/carvedService/rpc&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/zachgoldstein/serviceCarving/carvedService/server&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Superfast Counting Service running on :6666&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">NewServer</span>()
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">twirpHandler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">NewCarvedServer</span>(<span style="color:#a6e22e">server</span>, <span style="color:#66d9ef">nil</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:6666&#34;</span>, <span style="color:#a6e22e">twirpHandler</span>))
-</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
-<p>So how does this perform?
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>RPS sent: 19.16 Request latency: min: 41.4 max: 63.3 median: 42.6 p95: 44.6 p99: 47.1</span></span></code></pre></div>
-And looking at <code>htop</code>, we can see it&rsquo;s running nicely across all our cores.</p>
-<figure><img src="/posts/golangCarving/balancedLoad.png" width="100%"/>
-</figure>
-
-<p>Now that we have a service that properly solves our CPU-bound bottleneck, we can integrate it back into our &ldquo;monolithic&rdquo; node app.</p>
-<p>Bringing in protobufjs, our server now looks like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">protobuf</span> = <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;protobufjs&#34;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> = <span style="color:#a6e22e">require</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">express</span><span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> = <span style="color:#a6e22e">require</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">body</span><span style="color:#f92672">-</span><span style="color:#a6e22e">parser</span><span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">request</span> = <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;request&#34;</span>);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> = <span style="color:#a6e22e">express</span>();
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">json</span>());
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">express</span>.<span style="color:#a6e22e">json</span>());
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;/&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">Hello</span> <span style="color:#a6e22e">World</span>!<span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span>})
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">function</span> <span style="color:#a6e22e">getSumBuffer</span>(<span style="color:#a6e22e">data</span>) {
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">errMsg</span> = <span style="color:#a6e22e">Sum</span>.<span style="color:#a6e22e">verify</span>(<span style="color:#a6e22e">data</span>);
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">errMsg</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">throw</span> <span style="color:#a6e22e">errMsg</span>;
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">sum</span> = <span style="color:#a6e22e">Sum</span>.<span style="color:#a6e22e">fromObject</span>(<span style="color:#a6e22e">data</span>);
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Sum</span>.<span style="color:#a6e22e">encode</span>(<span style="color:#a6e22e">sum</span>).<span style="color:#a6e22e">finish</span>();
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">function</span> <span style="color:#a6e22e">processCount</span>(<span style="color:#a6e22e">requestData</span>, <span style="color:#a6e22e">callback</span>) {
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">times</span> = <span style="color:#a6e22e">Times</span>.<span style="color:#a6e22e">decode</span>(<span style="color:#a6e22e">requestData</span>);
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">request</span>({
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">method</span>: <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">POST</span><span style="color:#960050;background-color:#1e0010">&#39;</span>,
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">uri</span>: <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">http</span>:<span style="color:#75715e">//localhost:6666/twirp/twirp.carved.Carved/Count&#39;,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">headers</span>: {
-</span></span><span style="display:flex;"><span>      <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#960050;background-color:#1e0010">&#39;</span>: <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span><span style="color:#960050;background-color:#1e0010">&#39;</span>
-</span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">body</span>: <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>(<span style="color:#a6e22e">times</span>)
-</span></span><span style="display:flex;"><span>  }, <span style="color:#a6e22e">function</span>(<span style="color:#66d9ef">error</span>, <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">body</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">buffer</span> = <span style="color:#a6e22e">getSumBuffer</span>(<span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">parse</span>(<span style="color:#a6e22e">body</span>));
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">callback</span>(<span style="color:#66d9ef">error</span>, <span style="color:#a6e22e">buffer</span>);
-</span></span><span style="display:flex;"><span>  });
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">function</span> <span style="color:#a6e22e">rpcImpl</span>(<span style="color:#a6e22e">method</span>, <span style="color:#a6e22e">requestData</span>, <span style="color:#a6e22e">callback</span>) {
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">method</span>.<span style="color:#a6e22e">name</span> <span style="color:#f92672">==</span>= <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">Count</span><span style="color:#960050;background-color:#1e0010">&#39;</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">processCount</span>(<span style="color:#a6e22e">requestData</span>, <span style="color:#a6e22e">callback</span>);
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">/</span><span style="color:#a6e22e">Count</span><span style="color:#960050;background-color:#1e0010">&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">carvedService</span>.<span style="color:#a6e22e">count</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">function</span>(<span style="color:#a6e22e">err</span>, <span style="color:#a6e22e">response</span>) {
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">`Counted to ${response.Sum} \n`</span>)
-</span></span><span style="display:flex;"><span>  });
-</span></span><span style="display:flex;"><span>})
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">root</span> = <span style="color:#a6e22e">protobuf</span>.<span style="color:#a6e22e">loadSync</span>(<span style="color:#e6db74">&#34;../carvedService.proto&#34;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">CarvedService</span> = <span style="color:#a6e22e">root</span>.<span style="color:#a6e22e">lookupService</span>(<span style="color:#e6db74">&#34;Carved&#34;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">carvedService</span> = <span style="color:#a6e22e">CarvedService</span>.<span style="color:#a6e22e">create</span>(<span style="color:#a6e22e">rpcImpl</span>, <span style="color:#66d9ef">false</span>, <span style="color:#66d9ef">false</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">Times</span> = <span style="color:#a6e22e">root</span>.<span style="color:#a6e22e">lookupType</span>(<span style="color:#e6db74">&#34;Times&#34;</span>);
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">Sum</span> = <span style="color:#a6e22e">root</span>.<span style="color:#a6e22e">lookupType</span>(<span style="color:#e6db74">&#34;Sum&#34;</span>);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>, () =&gt; {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">BaseApp</span> <span style="color:#a6e22e">app</span> <span style="color:#a6e22e">listening</span> <span style="color:#a6e22e">on</span> <span style="color:#a6e22e">port</span> <span style="color:#ae81ff">3000</span>!<span style="color:#960050;background-color:#1e0010">&#39;</span>);
-</span></span><span style="display:flex;"><span>})</span></span></code></pre></div>
-<p>So in a nutshell, our node server issues a request to the go service to do the heavy lifting in counting. A lot of the boilerplate you see here can be abstracted as your system includes more endpoints and messages. The meat of this logic is in processCount, where we do the serialization/ deserialization for our service, issuing an RPC request and returning a properly formatted result.</p>
-<p>How does this perform?
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">### Carved System: RPS sent: 19.14 Request latency: min: 42.9 max: 56.4 median: 44.3 p95: 46.2 p99: 54</span></span></span></code></pre></div></p>
-<p>So pretty well, despite the fact we&rsquo;ve introduced a hop between the two servers.
+So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp."><meta property="og:type" content="article"><meta property="og:url" content="/posts/golangcarving/golangcarving/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2018-04-12T11:37:47-04:00"><meta property="article:modified_time" content="2018-04-12T11:37:47-04:00"></head><body><header class=app-header><a href><img class=app-header-avatar src=/zachGoldstein.png alt="Zach Goldstein"></a><h1>Zach Goldstein</h1><p>zachgold at gmail dot com ;)</p><p>Organising:<br><a href=https://www.meetup.com/polyhackTO/ class="link dim underline">Polyhack</a><br><a href=https://www.meetup.com/go-toronto/ class="link dim underline">GoTo</a><br><a href=http://gocon.ca class="link dim underline">Gocon Canada</a></p><p><a href=/posts/talklisting/ class="link dim underline">Tech Talks</a></p><p><a href=/posts/previouswork/ class="link dim underline">Previous Work</a></p><div class=app-header-social><a target=_blank href=https://github.com/zachgoldstein><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github"><title>github</title><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg></a><a target=_blank href=https://twitter.com/whatthezach><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter"><title>twitter</title><path d="M23 3a10.9 10.9.0 01-3.14 1.53 4.48 4.48.0 00-7.86 3v1A10.66 10.66.0 013 4s-4 9 5 13a11.64 11.64.0 01-7 2c9 5 20 0 20-11.5a4.5 4.5.0 00-.08-.83A7.72 7.72.0 0023 3z"/></svg></a><a target=_blank href=https://www.linkedin.com/in/zach-goldstein-90489a5/><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin"><title>linkedin</title><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></header><script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-G6MTBYH8WC")</script><main class=app-container><article class=post><header class=post-header><h1 class=post-title>Safely Carving Away a Snappy Golang Service from a Javascript Monolith</h1><div class=post-meta><div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar"><title>calendar</title><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Apr 12, 2018</div><div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock"><title>clock</title><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>9 min read</div></div></header><div class=post-content><p>In a 2015 post, good ol&rsquo; Martin Fowler put it well:</p><blockquote><p>Almost all the successful microservice stories have started with a monolith that got too big and was broken up
+ (<a href=https://martinfowler.com/bliki/MonolithFirst.html>https://martinfowler.com/bliki/MonolithFirst.html</a>)</p></blockquote><p>So what does that process look like? In this post, we&rsquo;re going to go on a little journey and carve away a high-performance service from a very simple node app. We&rsquo;ll do load testing to verify our bottleneck, create a protobuf file to clearly communicate the service boundary, and then integrate a golang server implemented with an RPC library called Twirp. The general benefits of service-oriented architectures are a bit assumed here, but if you&rsquo;d like to learn about those justifications in more detail, I&rsquo;d highly suggest another Fowler article: <a href=https://martinfowler.com/articles/microservices.html#MicroservicesAndSoa>https://martinfowler.com/articles/microservices.html#MicroservicesAndSoa</a></p><p>We&rsquo;ll start with a node server that does something painfully simple. It has one endpoint that sums up random numbers:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>express</span> = <span style=color:#a6e22e>require</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>express</span><span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>bodyParser</span> = <span style=color:#a6e22e>require</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>body</span><span style=color:#f92672>-</span><span style=color:#a6e22e>parser</span><span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>app</span> = <span style=color:#a6e22e>express</span>();
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>bodyParser</span>.<span style=color:#a6e22e>json</span>());
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>express</span>.<span style=color:#a6e22e>json</span>());
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>post</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#f92672>/</span><span style=color:#a6e22e>Count</span><span style=color:#960050;background-color:#1e0010>&#39;</span>, (<span style=color:#a6e22e>req</span>, <span style=color:#a6e22e>res</span>) =&gt; {
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>let</span> <span style=color:#a6e22e>sum</span> = <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>timesToIterate</span> = <span style=color:#a6e22e>req</span>.<span style=color:#a6e22e>body</span>.<span style=color:#a6e22e>times</span>;
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>for</span> (<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>i</span> = <span style=color:#ae81ff>1</span>; <span style=color:#a6e22e>i</span> <span style=color:#f92672>&lt;=</span> <span style=color:#a6e22e>timesToIterate</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>sum</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>Math</span>.<span style=color:#a6e22e>round</span>(<span style=color:#a6e22e>Math</span>.<span style=color:#a6e22e>random</span>() <span style=color:#f92672>*</span> <span style=color:#ae81ff>100</span>);
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>res</span>.<span style=color:#a6e22e>send</span>(<span style=color:#e6db74>`Counted to ${sum} \n`</span>);
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>listen</span>(<span style=color:#ae81ff>3000</span>, () =&gt; <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>BaseApp</span> <span style=color:#a6e22e>app</span> <span style=color:#a6e22e>listening</span> <span style=color:#a6e22e>on</span> <span style=color:#a6e22e>port</span> <span style=color:#ae81ff>3000</span>!<span style=color:#960050;background-color:#1e0010>&#39;</span>));</span></span></code></pre></div><p>This is our representation of a monolithic service, so indulge me while I imagine this toy app as if it was a huge system with all the usual moving pieces. Let&rsquo;s say that this calculation is eating up our server performance, and we want to build out a separate system that&rsquo;s engineered to solve only this problem in a very efficient way. It&rsquo;s really important to understand that CPU performance is one of many reasons to carve away a service. For us here, it serves as a really great way to illustrate how the system is going to change, but generally, you&rsquo;ll want to look at a whole ton of other constraints.</p><p>Some are technical, like memory usage, network throughput, or file I/O, while others could be purely social. Sometimes the most effective way for a lot of developers to work well in parallel is to separate them into smaller, service-focused groups where you establish clear boundaries between them and domain-specific targets.</p><p>So the first step here is to really understand your bottlenecks. We&rsquo;ve created an artificial one in the form of a CPU intensive task, summing up random numbers. Before we get too far, let&rsquo;s do some quick load testing to get an idea of what our performance looks like.
+We&rsquo;ll be using a tool called artillery (<a href=https://artillery.io>https://artillery.io</a>) in this post to do our load testing.</p><p>It&rsquo;s a node script, so we npm install it:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>npm install -g artillery</span></span></code></pre></div><p>One-off quick tests can be done with the quick command:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>artillery quick --count <span style=color:#ae81ff>10</span> -n <span style=color:#ae81ff>20</span> https://artillery.io/</span></span></code></pre></div><p>In our app, we need to post with some data, so we&rsquo;ll create a config file called baseAppLoadTest.yml</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yml data-lang=yml><span style=display:flex><span><span style=color:#f92672>config</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>target</span>: <span style=color:#e6db74>&#34;http://localhost:3000&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>phases</span>:
+</span></span><span style=display:flex><span>    - <span style=color:#f92672>duration</span>: <span style=color:#ae81ff>10</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>arrivalRate</span>: <span style=color:#ae81ff>20</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>scenarios</span>:
+</span></span><span style=display:flex><span>  - <span style=color:#f92672>name</span>: <span style=color:#e6db74>&#34;Count random numbers&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>flow</span>:
+</span></span><span style=display:flex><span>      - <span style=color:#f92672>post</span>:
+</span></span><span style=display:flex><span>          <span style=color:#f92672>url</span>: <span style=color:#e6db74>&#34;/Count&#34;</span>
+</span></span><span style=display:flex><span>          <span style=color:#f92672>json</span>:
+</span></span><span style=display:flex><span>            <span style=color:#f92672>times</span>: <span style=color:#ae81ff>10000000</span></span></span></code></pre></div><p>Here we&rsquo;re just hitting a local service, but in the tests shown, I&rsquo;ve actually spun up two aws instances within the same AWS region & AZ - a beefy one with a few cores where we are running our system and another small instance from which we&rsquo;re executing this load test. This avoids inconsistent results when issuing requests from a congested network like a coworking space. I learned this the hard way, but if you crank up the RPS here (arrivalRate), it&rsquo;s possible to knock your network offline.</p><p>I also run htop (which is just a fancier version of top) to visualize how we&rsquo;re utilizing the cores on this instance.</p><p>Running the node app and load testing:<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>artillery run ./baseAppLoadTest.yml</span></span></code></pre></div>And the load test results:<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>RPS sent: 4.64 Request latency: min: 232.7 max: 32857.7 median: 16351.4 p95: 31296.4 p99: 32614.5</span></span></code></pre></div>So performance is terrible. Why?
+Using htop while our node server is running, we can see it just thrashing a single CPU:</p><figure><img src=/posts/golangCarving/cpuNuke.png width=100%></figure><p>At high CPU loads, the Node.js event loop competes with the V8 garbage collector over CPU time, which wrecks our performance.
+If we tune down task intensity to {times:1000000}, we see that performance is actually pretty decent when we&rsquo;re not nuking a CPU:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>RPS sent: 20.04 Request latency: min: 26.5 max: 37.5 median: 27.1 p95: <span style=color:#ae81ff>28</span> p99: 30.1</span></span></code></pre></div><p>So we have our bottleneck.</p><p>To tackle this world-altering problem, we&rsquo;re going to create a go service using an RPC library called Twirp and protobuf, a transport protocol. But why go?And why bother with this at all?</p><p>First off, our main strategy here to improve performance is going to be leveraging better concurrency primitives to let us fully utilize all of the CPU cores on a larger system. Node, python, and ruby all use a GIL to make the most out of a single core, but this GIL also means that there&rsquo;s quite a bit of additional complexity to write safe, concurrent software. We&rsquo;re going to use go because of its simple approach to concurrency and its strong profiling and benchmarking tools. We won&rsquo;t dive into those tools here, but it&rsquo;s worth mentioning that pprof and go-torch in particular are wonderful ways to understand your program better.</p><p>So could we use Rust? Elixir? Erlang? Yes! But today, go is our choice du jour on our journey towards service-oriented nirvana. We&rsquo;ll be using an RPC library called Twirp (similar to gRPC but simpler) to do this. See this associated post for another example of writing go code to do this: <a href=https://x-team.com/blog/golang-rpc-twirp/>https://x-team.com/blog/golang-rpc-twirp/</a></p><p>Follow the installation instructions for twirp and it&rsquo;s protobuf dependencies here: <a href=https://github.com/twitchtv/twirp#installation>https://github.com/twitchtv/twirp#installation</a></p><p>We&rsquo;ll start by writing a protobuf file that describes our new service and the messages it uses.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-protobuf data-lang=protobuf><span style=display:flex><span>syntax <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;proto3&#34;</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#f92672>package</span> twirp<span style=color:#f92672>.</span>carved;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>option</span> go_package <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;rpc&#34;</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e>// Carved service counts numbers very quickly.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>service</span> Carved {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>rpc</span> Count(Times) <span style=color:#66d9ef>returns</span> (Sum);<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Times</span> {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>int32</span> times <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>; <span style=color:#75715e>// must be &gt; 0
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>message</span> <span style=color:#a6e22e>Sum</span> {<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>  <span style=color:#66d9ef>int32</span> Sum <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>;<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span>}</span></span></code></pre></div><p>Using twirp, we&rsquo;ll generate stubs for this service and place them in the rpc folder.</p><pre tabindex=0><code>protoc --proto_path=$GOPATH/src:. --twirp_out=./rpc --go_out=./rpc ./carvedService.proto
+</code></pre><p>Our service implementation looks like this:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#f92672>package</span> <span style=color:#a6e22e>server</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;context&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;math/rand&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;sync&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;time&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>pb</span> <span style=color:#e6db74>&#34;github.com/zachgoldstein/serviceCarving/carvedService/rpc&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Server implements the UniversalPaperclips service
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Server</span> <span style=color:#66d9ef>struct</span>{}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// NewServer creates an instance of our server
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>NewServer</span>() <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>Server</span>{}
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>countMutex</span> <span style=color:#66d9ef>struct</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>mu</span>    <span style=color:#f92672>*</span><span style=color:#a6e22e>sync</span>.<span style=color:#a6e22e>Mutex</span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>count</span> <span style=color:#66d9ef>int32</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// CountWorker sums of numbers based on ints placed on the jobChan,
+</span></span></span><span style=display:flex><span><span style=color:#75715e>// adding them to a mutex-protected counter when done.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>CountWorker</span>(<span style=color:#a6e22e>count</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>countMutex</span>, <span style=color:#a6e22e>wg</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>sync</span>.<span style=color:#a6e22e>WaitGroup</span>, <span style=color:#a6e22e>jobChan</span> <span style=color:#f92672>&lt;-</span><span style=color:#66d9ef>chan</span> <span style=color:#66d9ef>int</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>r</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rand</span>.<span style=color:#a6e22e>New</span>(<span style=color:#a6e22e>rand</span>.<span style=color:#a6e22e>NewSource</span>(<span style=color:#a6e22e>time</span>.<span style=color:#a6e22e>Now</span>().<span style=color:#a6e22e>Unix</span>()))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>j</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>jobChan</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>sum</span> <span style=color:#f92672>:=</span> int32(<span style=color:#ae81ff>0</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>i</span> &lt; <span style=color:#a6e22e>j</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>sum</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>r</span>.<span style=color:#a6e22e>Int31n</span>(<span style=color:#ae81ff>100</span>)
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>count</span>.<span style=color:#a6e22e>mu</span>.<span style=color:#a6e22e>Lock</span>()
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>count</span>.<span style=color:#a6e22e>count</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>sum</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>count</span>.<span style=color:#a6e22e>mu</span>.<span style=color:#a6e22e>Unlock</span>()
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>wg</span>.<span style=color:#a6e22e>Done</span>()
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Count finds the sum of random numbers added together N times
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>s</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>Server</span>) <span style=color:#a6e22e>Count</span>(<span style=color:#a6e22e>ctx</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Context</span>, <span style=color:#a6e22e>times</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Times</span>) (<span style=color:#f92672>*</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Sum</span>, <span style=color:#66d9ef>error</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>wg</span> <span style=color:#f92672>:=</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>sync</span>.<span style=color:#a6e22e>WaitGroup</span>{}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>jobSize</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>100000</span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>numWorkers</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>5</span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>countMutex</span> <span style=color:#f92672>:=</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>countMutex</span>{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>mu</span>:    <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>sync</span>.<span style=color:#a6e22e>Mutex</span>{},
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>count</span>: <span style=color:#ae81ff>0</span>,
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>jobChan</span> <span style=color:#f92672>:=</span> make(<span style=color:#66d9ef>chan</span> <span style=color:#66d9ef>int</span>, <span style=color:#ae81ff>100</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>i</span> &lt; <span style=color:#a6e22e>numWorkers</span>; <span style=color:#a6e22e>i</span><span style=color:#f92672>++</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>go</span> <span style=color:#a6e22e>CountWorker</span>(<span style=color:#a6e22e>countMutex</span>, <span style=color:#a6e22e>wg</span>, <span style=color:#a6e22e>jobChan</span>)
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>numJobs</span> <span style=color:#f92672>:=</span> int(<span style=color:#a6e22e>times</span>.<span style=color:#a6e22e>Times</span>) <span style=color:#f92672>/</span> <span style=color:#a6e22e>jobSize</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>jobSize</span> &gt; int(<span style=color:#a6e22e>times</span>.<span style=color:#a6e22e>Times</span>) {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>numJobs</span> = <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>jobSize</span> = int(<span style=color:#a6e22e>times</span>.<span style=color:#a6e22e>Times</span>)
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>w</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>w</span> &lt; <span style=color:#a6e22e>numJobs</span>; <span style=color:#a6e22e>w</span><span style=color:#f92672>++</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>wg</span>.<span style=color:#a6e22e>Add</span>(<span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>jobChan</span> <span style=color:#f92672>&lt;-</span> <span style=color:#a6e22e>jobSize</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    close(<span style=color:#a6e22e>jobChan</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>wg</span>.<span style=color:#a6e22e>Wait</span>()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>pb</span>.<span style=color:#a6e22e>Sum</span>{
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>Sum</span>: <span style=color:#a6e22e>countMutex</span>.<span style=color:#a6e22e>count</span>,
+</span></span><span style=display:flex><span>    }, <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>Our implementation here uses a worker pool system to safely and concurrently sum random numbers. For a more detailed discussion of the mechanics here, see <a href=https://gobyexample.com/worker-pools>https://gobyexample.com/worker-pools</a>. We&rsquo;re using worker pools to control the degree of parallelism used in our program. It&rsquo;s important to note that you can have too much parallelism, and creating excessive numbers of goroutines will cause the scheduler to have a tough time mapping them to OS threads, eating up performance. Here we use a non-trivial jobSize to make sure that each goroutine is doing a reasonable amount of work. Since we&rsquo;re summing up numbers, we also have a mutex that&rsquo;s properly synchronizing that summed value between many goroutines. We want to avoid waiting around on this lock, so the limited size of the worker pool here makes sure that the number of active goroutines using the same mutex is small and the time spent waiting for the lock is trivial.</p><p>As an aside, another great little trick is to provide a go-routine scoped seed for <code>rand.Int31n()</code>. By default, go uses a globally locked pseudo-random number generator, and at high load, you can lose a lot of performance in waiting for that lock. Using go-torch, we can see this here:</p><figure><img src=/posts/golangCarving/goTorch.png width=100%></figure><p>Instead, you can provide a seed that&rsquo;s safe to use concurrently, which is what we do with:<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#a6e22e>r</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rand</span>.<span style=color:#a6e22e>New</span>(<span style=color:#a6e22e>rand</span>.<span style=color:#a6e22e>NewSource</span>(<span style=color:#a6e22e>time</span>.<span style=color:#a6e22e>Now</span>().<span style=color:#a6e22e>Unix</span>()))</span></span></code></pre></div></p><p>We use this implementation in our main like so:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#f92672>package</span> <span style=color:#a6e22e>main</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;log&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;net/http&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;github.com/zachgoldstein/serviceCarving/carvedService/rpc&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;github.com/zachgoldstein/serviceCarving/carvedService/server&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;Superfast Counting Service running on :6666&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>server</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>server</span>.<span style=color:#a6e22e>NewServer</span>()
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>twirpHandler</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rpc</span>.<span style=color:#a6e22e>NewCarvedServer</span>(<span style=color:#a6e22e>server</span>, <span style=color:#66d9ef>nil</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>http</span>.<span style=color:#a6e22e>ListenAndServe</span>(<span style=color:#e6db74>&#34;:6666&#34;</span>, <span style=color:#a6e22e>twirpHandler</span>))
+</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>So how does this perform?<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>RPS sent: 19.16 Request latency: min: 41.4 max: 63.3 median: 42.6 p95: 44.6 p99: 47.1</span></span></code></pre></div>And looking at <code>htop</code>, we can see it&rsquo;s running nicely across all our cores.</p><figure><img src=/posts/golangCarving/balancedLoad.png width=100%></figure><p>Now that we have a service that properly solves our CPU-bound bottleneck, we can integrate it back into our &ldquo;monolithic&rdquo; node app.</p><p>Bringing in protobufjs, our server now looks like this:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>protobuf</span> = <span style=color:#a6e22e>require</span>(<span style=color:#e6db74>&#34;protobufjs&#34;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>express</span> = <span style=color:#a6e22e>require</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>express</span><span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>bodyParser</span> = <span style=color:#a6e22e>require</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>body</span><span style=color:#f92672>-</span><span style=color:#a6e22e>parser</span><span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>request</span> = <span style=color:#a6e22e>require</span>(<span style=color:#e6db74>&#34;request&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>app</span> = <span style=color:#a6e22e>express</span>();
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>bodyParser</span>.<span style=color:#a6e22e>json</span>());
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>use</span>(<span style=color:#a6e22e>express</span>.<span style=color:#a6e22e>json</span>());
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>get</span>(<span style=color:#e6db74>&#39;/&#39;</span>, (<span style=color:#a6e22e>req</span>, <span style=color:#a6e22e>res</span>) =&gt; {
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>res</span>.<span style=color:#a6e22e>send</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>Hello</span> <span style=color:#a6e22e>World</span>!<span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>function</span> <span style=color:#a6e22e>getSumBuffer</span>(<span style=color:#a6e22e>data</span>) {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>errMsg</span> = <span style=color:#a6e22e>Sum</span>.<span style=color:#a6e22e>verify</span>(<span style=color:#a6e22e>data</span>);
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>errMsg</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>throw</span> <span style=color:#a6e22e>errMsg</span>;
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>sum</span> = <span style=color:#a6e22e>Sum</span>.<span style=color:#a6e22e>fromObject</span>(<span style=color:#a6e22e>data</span>);
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>Sum</span>.<span style=color:#a6e22e>encode</span>(<span style=color:#a6e22e>sum</span>).<span style=color:#a6e22e>finish</span>();
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>function</span> <span style=color:#a6e22e>processCount</span>(<span style=color:#a6e22e>requestData</span>, <span style=color:#a6e22e>callback</span>) {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>times</span> = <span style=color:#a6e22e>Times</span>.<span style=color:#a6e22e>decode</span>(<span style=color:#a6e22e>requestData</span>);
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>request</span>({
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>method</span>: <span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>POST</span><span style=color:#960050;background-color:#1e0010>&#39;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>uri</span>: <span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>http</span>:<span style=color:#75715e>//localhost:6666/twirp/twirp.carved.Carved/Count&#39;,
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#a6e22e>headers</span>: {
+</span></span><span style=display:flex><span>      <span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>Content</span><span style=color:#f92672>-</span><span style=color:#a6e22e>Type</span><span style=color:#960050;background-color:#1e0010>&#39;</span>: <span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>application</span><span style=color:#f92672>/</span><span style=color:#a6e22e>json</span><span style=color:#960050;background-color:#1e0010>&#39;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>body</span>: <span style=color:#a6e22e>JSON</span>.<span style=color:#a6e22e>stringify</span>(<span style=color:#a6e22e>times</span>)
+</span></span><span style=display:flex><span>  }, <span style=color:#a6e22e>function</span>(<span style=color:#66d9ef>error</span>, <span style=color:#a6e22e>response</span>, <span style=color:#a6e22e>body</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>const</span> <span style=color:#a6e22e>buffer</span> = <span style=color:#a6e22e>getSumBuffer</span>(<span style=color:#a6e22e>JSON</span>.<span style=color:#a6e22e>parse</span>(<span style=color:#a6e22e>body</span>));
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>callback</span>(<span style=color:#66d9ef>error</span>, <span style=color:#a6e22e>buffer</span>);
+</span></span><span style=display:flex><span>  });
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>function</span> <span style=color:#a6e22e>rpcImpl</span>(<span style=color:#a6e22e>method</span>, <span style=color:#a6e22e>requestData</span>, <span style=color:#a6e22e>callback</span>) {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>method</span>.<span style=color:#a6e22e>name</span> <span style=color:#f92672>==</span>= <span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>Count</span><span style=color:#960050;background-color:#1e0010>&#39;</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>processCount</span>(<span style=color:#a6e22e>requestData</span>, <span style=color:#a6e22e>callback</span>);
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>post</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#f92672>/</span><span style=color:#a6e22e>Count</span><span style=color:#960050;background-color:#1e0010>&#39;</span>, (<span style=color:#a6e22e>req</span>, <span style=color:#a6e22e>res</span>) =&gt; {
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>carvedService</span>.<span style=color:#a6e22e>count</span>(<span style=color:#a6e22e>req</span>.<span style=color:#a6e22e>body</span>, <span style=color:#a6e22e>function</span>(<span style=color:#a6e22e>err</span>, <span style=color:#a6e22e>response</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>res</span>.<span style=color:#a6e22e>send</span>(<span style=color:#e6db74>`Counted to ${response.Sum} \n`</span>)
+</span></span><span style=display:flex><span>  });
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>root</span> = <span style=color:#a6e22e>protobuf</span>.<span style=color:#a6e22e>loadSync</span>(<span style=color:#e6db74>&#34;../carvedService.proto&#34;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>CarvedService</span> = <span style=color:#a6e22e>root</span>.<span style=color:#a6e22e>lookupService</span>(<span style=color:#e6db74>&#34;Carved&#34;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>carvedService</span> = <span style=color:#a6e22e>CarvedService</span>.<span style=color:#a6e22e>create</span>(<span style=color:#a6e22e>rpcImpl</span>, <span style=color:#66d9ef>false</span>, <span style=color:#66d9ef>false</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>Times</span> = <span style=color:#a6e22e>root</span>.<span style=color:#a6e22e>lookupType</span>(<span style=color:#e6db74>&#34;Times&#34;</span>);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>Sum</span> = <span style=color:#a6e22e>root</span>.<span style=color:#a6e22e>lookupType</span>(<span style=color:#e6db74>&#34;Sum&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>app</span>.<span style=color:#a6e22e>listen</span>(<span style=color:#ae81ff>3000</span>, () =&gt; {
+</span></span><span style=display:flex><span>  <span style=color:#a6e22e>console</span>.<span style=color:#a6e22e>log</span>(<span style=color:#960050;background-color:#1e0010>&#39;</span><span style=color:#a6e22e>BaseApp</span> <span style=color:#a6e22e>app</span> <span style=color:#a6e22e>listening</span> <span style=color:#a6e22e>on</span> <span style=color:#a6e22e>port</span> <span style=color:#ae81ff>3000</span>!<span style=color:#960050;background-color:#1e0010>&#39;</span>);
+</span></span><span style=display:flex><span>})</span></span></code></pre></div><p>So in a nutshell, our node server issues a request to the go service to do the heavy lifting in counting. A lot of the boilerplate you see here can be abstracted as your system includes more endpoints and messages. The meat of this logic is in processCount, where we do the serialization/ deserialization for our service, issuing an RPC request and returning a properly formatted result.</p><p>How does this perform?<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e>### Carved System: RPS sent: 19.14 Request latency: min: 42.9 max: 56.4 median: 44.3 p95: 46.2 p99: 54</span></span></span></code></pre></div></p><p>So pretty well, despite the fact we&rsquo;ve introduced a hop between the two servers.
 We&rsquo;re also now operating across all cores:
-Happy times. Hope you enjoyed this adventure and picked up some useful tips to strategically carve away services in your system.</p>
-<hr>
-<p>Originally published at x-team.com on March 12, 2018.</p>
-
-        
-    </div>
-    <div class="post-footer">
-        
-    </div>
-</article>
-
-    </main>
-  </body>
-</html>
+Happy times. Hope you enjoyed this adventure and picked up some useful tips to strategically carve away services in your system.</p><hr><p>Originally published at x-team.com on March 12, 2018.</p></div><div class=post-footer></div></article></main></body></html>
