@@ -12,12 +12,11 @@ This summer, I built a fun little machine that does Tarot readings! This is the 
 
 If you’re interested in building your own take on this project, please go for it! Here are some links to resources from this project you might find helpful:
 
-- github containing the kicad board schematic and layout
-- gerbers, if you just want to get some of the boards made
-- link to fusion 360 for the mechanics
-- svg cut files if you just want to directly laser cut the pieces
-
-<br>
+- [github link to the kicad board schematic and layout](https://github.com/zachgoldstein/mechatarot/tree/main/electronics)
+- [gerbers, if you just want to get some of the boards made](https://github.com/zachgoldstein/mechatarot/tree/main/gerbers) WARNING: the board is extremely rough and needs a bodge wire on one of the button connector lines
+- [link to fusion 360 file for the mechanics](https://a360.co/3BxaTRK)
+- [laser cut files](https://github.com/zachgoldstein/mechatarot/tree/main/laserCutFiles)
+- [art files](https://github.com/zachgoldstein/mechatarot/tree/main/art)
 
 **If you have any questions, want a version of this for yourself, or just generally want to reach out, please do so! I’m [https://twitter.com/whatthezach](https://twitter.com/whatthezach) on Twitter and reachable at zachgold (at) gmail.com** 
 
