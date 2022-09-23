@@ -3,6 +3,14 @@ languageCode = "en-us"
 title = "Zach Goldstein"
 theme = "m10c"
 
+[markup]
+  [markup.tableOfContents]
+    endLevel = 3
+    ordered = false
+    startLevel = 1
+  [markup.goldmark.renderer]
+    unsafe=true
+
 [params]
   author = "Zach Goldstein"
   description = "zachgold at gmail dot com ;)"
