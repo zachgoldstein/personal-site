@@ -232,3 +232,5 @@ I have a ton of ideas. This project feels like a great base to build out tons of
 **And again, if you have any questions, want a version of this for yourself, or just generally want to reach out, please do so! I’m [https://twitter.com/whatthezach](https://twitter.com/whatthezach) on Twitter and reachable at zachgold (at) gmail.com. I’d love to chat with folks about the project**
 
 {{< figure src="/posts/mechatarot/tarotMachinePrinter4.webp" width="100%" class="center" >}}
+
+Big thanks to Sheena, Sasha, Spike and Denise for review on this article.
