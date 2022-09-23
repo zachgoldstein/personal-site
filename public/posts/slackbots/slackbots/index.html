@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Writing Slackbots With Goroutines // Zach Goldstein</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.103.1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Zach Goldstein" />
+    <meta name="description" content="" />
+    
+    <link rel="stylesheet" href="/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css" />
+  <style>
+    .align-left {
+      max-width: 50%;
+      width: auto\9*0.3;  
+      height: auto;
+      float: left;
+    }
+    .align-right {
+      max-width: 50%;
+      width: auto\9*0.3;  
+      height: auto;
+      float: right;
+    }
+    .image-block {
+      display: inline-block;
+      border: 1px solid red;
+      padding: 1rem 1rem;
+      vertical-align: middle;
+    }
+    .block-right {
+      max-width: 50%;
+      width: auto\9*0.3;  
+      height: auto;
+      display: block;
+    }
+
+    .post-content #TableOfContents ul{
+      list-style-type: none;
+    }
+    .center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      width: 50%;
+    }
+  </style>
+  
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Writing Slackbots With Goroutines"/>
+<meta name="twitter:description" content="It all started with a meme.
+This one involved created an insult from everybody’s favorite abusive television chef, Gordon Ramsay, by picking a value from three columns.
+First, you take your month of birth and match it up with an aggressive statement. So let’s say you were born in November, your statement would be “Get a Grip!”. Then take the first letter of your first name and do the same. If your name is Sam, then the next part would be “You Proud”."/>
+
+    <meta property="og:title" content="Writing Slackbots With Goroutines" />
+<meta property="og:description" content="It all started with a meme.
+This one involved created an insult from everybody’s favorite abusive television chef, Gordon Ramsay, by picking a value from three columns.
+First, you take your month of birth and match it up with an aggressive statement. So let’s say you were born in November, your statement would be “Get a Grip!”. Then take the first letter of your first name and do the same. If your name is Sam, then the next part would be “You Proud”." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/slackbots/slackbots/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2018-07-12T13:20:19-04:00" />
+<meta property="article:modified_time" content="2018-07-12T13:20:19-04:00" />
+
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href=""><img class="app-header-avatar" src="/zachGoldstein.png" alt="Zach Goldstein" /></a>
+      <h1>Zach Goldstein</h1>
+      <p>zachgold at gmail dot com ;)</p>
+        <p>
+            Organising:
+            <br>
+            <a href="https://www.meetup.com/polyhackTO/" class="link dim underline">Polyhack</a>
+            <br>
+            <a href="https://www.meetup.com/go-toronto/" class="link dim underline">GoTo</a>
+            <br>
+            <a href="http://gocon.ca" class="link dim underline">Gocon Canada</a>
+        </p>
+        <p><a href="/posts/talklisting/" class="link dim underline">Tech Talks</a></p>
+        <p><a href="/posts/previouswork/" class="link dim underline">Previous Work</a></p>
+      <div class="app-header-social">
+        
+          <a target="_blank" href="https://github.com/zachgoldstein"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github">
+  <title>github</title>
+  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+</svg></a>
+        
+          <a target="_blank" href="https://twitter.com/whatthezach"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter">
+  <title>twitter</title>
+  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+</svg></a>
+        
+          <a target="_blank" href="https://www.linkedin.com/in/zach-goldstein-90489a5/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin">
+  <title>linkedin</title>
+  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle>
+</svg></a>
+        
+      </div>
+    </header>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6MTBYH8WC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+
+      gtag('config', 'G-G6MTBYH8WC');
+    </script>
+    <main class="app-container">
+      
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-title">Writing Slackbots With Goroutines</h1>
+        <div class="post-meta">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+                Jul 12, 2018
+            </div>
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+                6 min read
+            </div></div>
+    </header>
+    <div class="post-content">
+        <p>It all started with a meme.</p>
+<p>This one involved created an insult from everybody’s favorite abusive television chef, Gordon Ramsay, by picking a value from three columns.</p>
+<ul>
+<li>First, you take your month of birth and match it up with an aggressive statement. So let’s say you were born in November, your statement would be “Get a Grip!”.</li>
+<li>Then take the first letter of your first name and do the same. If your name is Sam, then the next part would be “You Proud”.</li>
+<li>And finally, take the first letter of your last name and find the associated value in the third column. If your last name is Quixote, the final part would be “Gremlin!”</li>
+</ul>
+<p>Put together, our insult for Sam Quixote, born in November, would be “Get a Grip! You Proud Gremlin!”.</p>
+<p>Immediately, I thought this might make for a bit of good fun as a slack bot. I’ve played around with the options here to make our friend Gordon dramatically more supportive instead of the unfortunate verbal tirades. Our friend Sam’s message from Gordon is now this:</p>
+<figure><img src="/posts/slackbots/regalYoda.png" width="50%"/>
+</figure>
+
+<p>This article outlines that whole process and highlights some of the concurrency features of golang. If you’re interested in a compelling alternative to the callbacks and promises of JS, read on!</p>
+<p>Let’s first setup a slack bot for your team:</p>
+<ul>
+<li>Go to <a href="https://your-slack-team.slack.com/apps/new">https://your-slack-team.slack.com/apps/new</a></li>
+<li>Name your bot and add it to slack. I’ve called ours Gordon.</li>
+<li>In “Integration Settings”, record the API Token.</li>
+<li>Make a little profile image for adorable robotic Gordon:</li>
+</ul>
+<p>Now we can get to the actual code!</p>
+<p>We’re going to use a great go client library for slack called… slack, so we’ll install that:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go get github.com/nlopes/slack</span></span></code></pre></div>
+<p>This client library interacts with Slack’s Real Time Message API (RTM) (<a href="https://api.slack.com/rtm)">https://api.slack.com/rtm)</a>. It’s a very neat API that’s WebSocket-based, so we’ll receive events from slack’s backend as soon as they occur. Let’s start the library and make sure we can see events flowing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;strings&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/nlopes/slack&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">api</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">slack</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;&lt;API-TOKEN-SECRET-SAUCE&#34;</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>, <span style="color:#e6db74">&#34;slack-bot: &#34;</span>, <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Lshortfile</span>|<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">LstdFlags</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">slack</span>.<span style="color:#a6e22e">SetLogger</span>(<span style="color:#a6e22e">logger</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">api</span>.<span style="color:#a6e22e">SetDebug</span>(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">rtm</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">api</span>.<span style="color:#a6e22e">NewRTM</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">ManageConnection</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">IncomingEvents</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Event Received: %s\n&#34;</span>, <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Data</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p>The guts of this are what’s called a goroutine in golang, which establishes and manages our WebSocket connection to Slack:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">ManageConnection</span>()</span></span></code></pre></div>
+<p>This little gem will also handle reconnecting if your connection fails for some reason.
+We can then receive events from the <code>rtm</code> object&rsquo;s <code>IncomingEvents</code> channel. For now, we&rsquo;re just going to print out the <code>Type</code> field of any events we&rsquo;re receiving.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">IncomingEvents</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Event Received: &#34;</span>, <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Type</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p>This is a great example of the simplicity of golang’s concurrency primitives. Instead of something like a javascript callback, we set up a loop which will await all events on the channel. It’s a very synchronous-looking piece of code, but it’s actually describing two sequences executing separately. One is the Slack client library’s internal WebSocket processing, which is placing events on the IncomingEvents channel. The other is our implementation&rsquo;s loop, which is awaiting those events and performing some action when they&rsquo;re received.</p>
+<p>Channels, goroutines, and go’s other concurrency primitives are based on ideas from CSP research (Communicating Sequential Processes). A core tenet of go is this:</p>
+<blockquote>
+<p>Do not communicate by sharing memory; instead, share memory by communicating.</p>
+</blockquote>
+<p>So go attempts to hide more complex ideas like semaphores and memory fences, leaving you free to focus on events flowing through channels to loops receiving messages.</p>
+<p>In contrast, Javascript doesn’t execute across multiple threads, so it’s not even possible to share memory. There are no semaphores in happy go lucky JS-land because everything executes in an essentially atomic manner. You can run multiple node processes in a cluster sort of system, but getting them to interact and properly handle IPC can be challenging. Go, on the other hand, is built for this. It provides users with a rich set of tools to manage applications that maximally use available resources.</p>
+<p>Back to our favorite chef-bot!</p>
+<p>Running this should now briefly spam your terminal. Note that I’ve removed sensitive information and replaced it with REDACTED.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>run main.go</span></span></code></pre></div>
+<p>What’s this doing? We check all incoming message events for when our bot is tagged with “@”, and then we send a message to the same channel where that message came from. The empty default case there will allow our channel to receive the message and ignore all other event types sent on the channel without blocking.</p>
+<p>Running this results in something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Received:  connecting
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:45 slack.go:123: Starting RTM
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:45 &lt;autogenerated&gt;:1: parseResponseBody: <span style="color:#f92672">{</span>REDACTED<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:45 slack.go:130: Using URL: wss://REDACTED
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:45 slack.go:123: Dialing to websocket on url wss://REDACTED
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:46 slack.go:123: RTM connection succeeded on try <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>Event Received:  connected
+</span></span><span style="display:flex;"><span>slack-bot: 2018/02/12 16:53:46 slack.go:130: Incoming Event: <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;hello&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>Event Received:  hello</span></span></code></pre></div>
+<p>Alrighty! So we&rsquo;ve got a realtime connection to Slack&rsquo;s bot API and we can start doing interesting things.</p>
+<p>We&rsquo;ll now check for the type of message, and post a very ragey message from our Gordon Ramsay bot if somebody is tagging the bot in a message. Inside our loop, we&rsquo;ll add the following snippet:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Data</span>.(<span style="color:#66d9ef">type</span>) {
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">case</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">slack</span>.<span style="color:#a6e22e">MessageEvent</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">botTagString</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;&lt;@%s&gt;&#34;</span>, <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">GetInfo</span>().<span style="color:#a6e22e">User</span>.<span style="color:#a6e22e">ID</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">ev</span>.<span style="color:#a6e22e">Msg</span>.<span style="color:#a6e22e">Text</span>, <span style="color:#a6e22e">botTagString</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">SendMessage</span>(<span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">NewOutgoingMessage</span>(<span style="color:#e6db74">&#34;IT&#39;S BURNTTTT!&#34;</span>, <span style="color:#a6e22e">ev</span>.<span style="color:#a6e22e">Channel</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">default</span>:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p>What’s this doing? We check all incoming message events for when our bot is tagged with “@”, and then we send a message to the same channel where that message came from. The empty default case there will allow our channel to receive the message and ignore all other event types sent on the channel without blocking.</p>
+<p>Running this results in something like this:</p>
+<figure><img src="/posts/slackbots/believeInYou.png" width="50%"/>
+</figure>
+
+<p>Now, let’s do something a bit fancier and match what’s in our meme. We need to watch for messages of the form:</p>
+<p>“@gordon “</p>
+<p>So we’ll take our message and split it into its component parts, sending a message if the user doesn’t send a message with enough parts to it.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">messageParts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">message</span>, <span style="color:#e6db74">&#34; &#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">messageParts</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">3</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">SendMessage</span>(<span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">NewOutgoingMessage</span>(<span style="color:#e6db74">&#34;I Believe in You&#34;</span>, <span style="color:#a6e22e">ev</span>.<span style="color:#a6e22e">Channel</span>))
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p>Then we have a few very simple lookup tables (simplified for brevity) that we can search through to create a personalized insult, courtesy of our abusive friend Gordon Ramsay. <a href="https://gist.github.com/466c45978fe01d9525529dd39278268a">https://gist.github.com/466c45978fe01d9525529dd39278268a</a></p>
+<p>And finally we can send our message:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">SendMessage</span>(<span style="color:#a6e22e">rtm</span>.<span style="color:#a6e22e">NewOutgoingMessage</span>(<span style="color:#a6e22e">message</span>, <span style="color:#a6e22e">ev</span>.<span style="color:#a6e22e">Channel</span>))</span></span></code></pre></div>
+<p>Running this:</p>
+<figure><img src="/posts/slackbots/fullBot.png" width="50%"/>
+</figure>
+
+<p>Well done Gordon!</p>
+<p>You can find a cleaned up version of this code at <a href="https://github.com/zachgoldstein/gordonBot">https://github.com/zachgoldstein/gordonBot</a>. There’s a whole slew of things to do before this would be ready for production, but a few of them are in place in this code. I’ve added a few tests for the guts of this, and instead of hard-coding your API-key you can pass it in via a command line flag. If you’d like to see how what that looks like, definitely check it out.</p>
+<hr>
+<p>Originally published at x-team.com on February 22, 2018</p>
+
+        
+    </div>
+    <div class="post-footer">
+        
+    </div>
+</article>
+
+    </main>
+  </body>
+</html>

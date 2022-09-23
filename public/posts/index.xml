@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Zach Goldstein</title>
-    <link>/</link>
-    <description>Recent content on Zach Goldstein</description>
+    <title>Posts on Zach Goldstein</title>
+    <link>/posts/</link>
+    <description>Recent content in Posts on Zach Goldstein</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 22 Sep 2022 12:22:38 -0400</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 22 Sep 2022 12:22:38 -0400</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>MechaTarot - The Self-Serve Tarot Machine</title>
       <link>/posts/mechatarot/mechatarot/</link>
