@@ -12,7 +12,7 @@ I love building little art projects, especially for events. It’s a great way t
 
 The theme for the camp at this event was a medieval-style tavern where humans and mystical creatures alike could come and enjoy hanging out with a drink. I chose to focus on the magic element and see if I could make a few glowy crystal things. Having just recently bought [Mars 3 resin printer](https://www.elegoo.com/products/elegoo-mars-3-lcd-3d-printer), it felt like a fantastic opportunity to use it and see what prints would look like in combination with slow-fade LEDs.
 
-You can find all the project files on [github here](https://github.com/zachgoldstein/glowingCrystals), including:
+[You can find all the project files on github, including:](https://github.com/zachgoldstein/glowingCrystals)
 
 - STL and chitubox files you can use to print off your own crystals
 - OpenSCAD files to generate new crystal geometry yourself
@@ -81,7 +81,7 @@ After the event, I wanted to extend things a bit further. As much as I loved the
 
 {{< figure src="/posts/glowycrystals/Screen_Shot_2022-09-22_at_11.24.04_AM.png" width="50%" >}}
 
-Here’s a quick link to download the `.scad` file I ended up with: [https://github.com/zachgoldstein/glowingCrystals/blob/main/crystals.scad](https://github.com/zachgoldstein/glowingCrystals/blob/main/crystals.scad)
+[You can download the full `.scad` file I ended up with here](https://github.com/zachgoldstein/glowingCrystals/blob/main/crystals.scad)
 
 If you want to generate your own crystals, you can change the value of `seed` to another number, and OpenSCAD will come up with something new.
 
@@ -122,7 +122,7 @@ module crystal_ring(radius, num_crystals, slant, min_radius, max_radius, min_hei
 }
 ```
 
-This looks a bit involved, but I’m really just building off chapter 7 of the OpenSCAD tutorial on loops here: [https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_7](https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_7). I add a few tweaks, specifically the randomized values for radius, height and angle. I highly suggest playing with the input values to this function and its call to our crystal `module.` There was a bit of trial and error, futzing with things until I could get something I liked.
+This looks a bit involved, but I’m really just building off [chapter 7 of the OpenSCAD tutorial on loops](https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_7). I add a few tweaks, specifically the randomized values for radius, height and angle. I highly suggest playing with the input values to this function and its call to our crystal `module.` There was a bit of trial and error, futzing with things until I could get something I liked.
 
 <div text-align="center" padding="2rem 2rem" margin="0">
     <img src="/posts/glowycrystals/Screen_Shot_2022-10-31_at_3.24.58_PM.png" width="45%" display="inline-block" padding="1rem 1rem"/>
@@ -173,9 +173,11 @@ I enjoyed my brief misadventure with OpenSCAD, resin-printed crystals and itty b
 
 Some wonderful reading for more procedurally generated goodness:
 
-- Algorithmic Beauty of Plants ([http://algorithmicbotany.org/papers/abop/abop.pdf](http://algorithmicbotany.org/papers/abop/abop.pdf))
-- Ben Fry ([https://benfry.com/projects/](https://benfry.com/projects/))
-- Casey Reas ([https://reas.com/](https://reas.com/))
-- Jared Tarbell ([https://www.infinite.center/list/](https://www.infinite.center/list/))
+- [Algorithmic Beauty of Plants ](http://algorithmicbotany.org/papers/abop/abop.pdf)
+- [Ben Fry ](https://benfry.com/projects/)
+- [Casey Reas](https://reas.com/)
+- [Jared Tarbell](https://www.infinite.center/list/)
 
 Anyways, thanks for reading. Have a great day.
+
+Thanks to Valkryie, Evan and Jess for review on this article
