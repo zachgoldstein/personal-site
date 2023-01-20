@@ -11,7 +11,7 @@ When starting projects, I’m often looking to translate a rough design or flow 
 
 I think the usual decision for people is whatever you’re comfortable with, in my case Django and Lit or React. But lately I’ve been exploring this in a bit more detail. What if I just… didn’t introduce these tools at this stage? How far can I get without this stuff? What’s missing or time-consuming to get going?
 
-In this post I’m going to introduce an extension of the API faking library `json-server` that adds hypermedia responses. Instead of a RESTful api returning JSON, we render that same data through through simplistic templates, returning html blocks. When working with HTMX and markup, I find this has been a great tool to explore ideas quickly.
+In this post I’m going to introduce an extension of the API faking library [`json-server`](https://github.com/typicode/json-server) that adds hypermedia responses. Instead of a RESTful api returning JSON, we render that same data through through simplistic templates, returning html blocks. When working with HTMX and markup, I find this has been a great tool to explore ideas quickly.
 
 To pull it down:
 
