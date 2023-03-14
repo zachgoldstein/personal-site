@@ -51,7 +51,7 @@ Our page’s markup looks like this:
 
 ```html
 <body>
-		<button class="boop-btn" 
+    <button class="boop-btn" 
         hx-post="/boops" 
         hx-trigger="click" 
         hx-target=".new-boop">
