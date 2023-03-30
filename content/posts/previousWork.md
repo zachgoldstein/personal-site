@@ -5,6 +5,16 @@ draft: false
 type: "page"
 ---
 
+#### Recurse Center Participant _<small>Jan 2023 – Mar 2023</small>_
+
+- Participated in Recurse Center, an educational retreat designed to make people dramatically better programmers. Alongside an incredible batch of people, explored a variety of technical ideas within the self-directed environment of RC.
+- Explored HTMX and Django in detail, trying to understand the possibilities and limits of using minimal JS libraries with battle-hardened python frameworks. https://zachgoldstein.engineering/posts/crusty-knives/crusty-knives/
+- Completed the Fly.io gossip glomers challenges in Go. Deepened my understanding of distributed systems and Go by building hands-on systems. https://github.com/zachgoldstein/flyio-glomers
+- Worked through Nand2Tetris, a course designed to go from elementary gates through to the construction of a modern computer system across both hardware and software. Built a simplified compiler, CPU, ALU and other systems with python.
+- Built a library to quickly fake a hypermedia API, designed to be used with HTMX to simplify prototyping: https://zachgoldstein.engineering/posts/hypermedia-server/hypermedia-server/
+- In embedded C++, built an extensible firmware system for a hardware datalogger I designed for mushroom growers. The system is built with the raspi pico (RP2040) and a custom PCB I designed.
+- Explored CAD and mechanical engineering in fusion360 to design and iterate on a set of custom parts for fancy cafe espresso machines. Collaborated with a local coffee roasting company and espresso machine servicing business to fine-tune parts.
+
 #### Bramble & Artery - Director of Engineering _<small>Aug 2019 – Aug 2022</small>_
 
 - Led the technical transformation of Artery, a platform to co-organise intimate cultural events, to Bramble, a dynamic virtual meetings product during the tumultuous coronavirus era.
