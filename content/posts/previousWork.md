@@ -5,11 +5,26 @@ draft: false
 type: "page"
 ---
 
-#### Toptal - Software Engineer _<small>Sep 2016 – Ongoing</small>_
+#### Bramble & Artery - Director of Engineering _<small>Aug 2019 – Aug 2022</small>_
+
+- Led the technical transformation of Artery, a platform to co-organise intimate cultural events, to Bramble, a dynamic virtual meetings product during the tumultuous coronavirus era.
+- Worked in tight collaboration to prototype a speculative product with dynamic videoconferencing elements, leading to around a million dollars in funding.
+- Built engineering team from two engineers to a team of twelve, designing the hiring process from scratch. Established critical partnerships with a network of independent contractors to accelerate development and fill gaps in specialised expertise.
+- Worked directly with founders to set the technical roadmap and regularly prepared development reports to communicate progress across the team. Pushed to stabilise a high-velocity cadence, regularly deploying new features and fixes.
+- Introduced automated deployments, testing strategies, code review and other technical process into the team, improving the reliability of deployments and reducing regressions.
+- Experimented with a variety of management techniques to "steer the ship" on the technical team, continually seeking to improve the health and growth of the team.
+- Pushed to improve non-technical process, introducing a lightweight scoping strategy based off Basecamp's shaping documents. Deployed and fine-tuned this process on over a dozen major projects.
+- Led from the front, reviewing and writing code, monitoring and operating infrastructure, directly firefighting issues.
+- Prototyped initial infrastructure on AWS and collaborated with engineers to design a flexible architecture that could react to the fast-moving requiremenets of live virtual events. Shifted from a brittle, manually managed system to a flexible infra-as-code strategy using terraform. Cut down the time to scale infrastructure up or down from multiple days to hours, reducing operational costs by 50%.
+- Starting as a senior software engineer, implemented automated payment systems with Stripe in Go & Javascript on the Artery platform before transitioning into a leadership role.
+
+---
+
+#### Toptal - Contract Software Engineer _<small>Sep 2016 – Ongoing</small>_
 
 - Architected earthquake detection systems for Rio Tinto's Mongolian mine Oyu Tolgoi, one of the largest mines in the world
   - Worked directly with seismologists and on-site personel to build python pipelines deployed on kubernetes
-- Drove the creation of a new revenue stream forjuice bar chain puregreen by building full stack system to create, manage, and execute subscriptions
+- Drove the creation of a new revenue stream for juice bar chain PureGreen, working full stack to build a user-facing system to create, manage, and execute subscriptions.
   - Used django, react, and redux. Integrated directly with payment provider and distribution partner
   - https://www.puregreen.com
 - Implemented data collection systems for financial analysis product wavebasis and integrated payment provider for subscriptions
