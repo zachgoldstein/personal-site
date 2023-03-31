@@ -25,7 +25,7 @@ type: "page"
 - Experimented with a variety of management techniques to "steer the ship" on the technical team, continually seeking to improve the health and growth of the team.
 - Pushed to improve non-technical process, introducing a lightweight scoping strategy based off Basecamp's shaping documents. Deployed and fine-tuned this process on over a dozen major projects.
 - Led from the front, reviewing and writing code, monitoring and operating infrastructure, directly firefighting issues.
-- Prototyped initial infrastructure on AWS and collaborated with engineers to design a flexible architecture that could react to the fast-moving requiremenets of live virtual events. Shifted from a brittle, manually managed system to a flexible infra-as-code strategy using terraform. Cut down the time to scale infrastructure up or down from multiple days to hours, reducing operational costs by 50%.
+- Prototyped initial infrastructure on AWS and collaborated with engineers to design a flexible architecture that could react to the fast-moving requirements of live virtual events. Shifted from a brittle, manually managed system to a flexible infra-as-code strategy using terraform. Cut down the time to scale infrastructure up or down from multiple days to hours, reducing operational costs by 50%.
 - Starting as a senior software engineer, implemented automated payment systems with Stripe in Go & Javascript on the Artery platform before transitioning into a leadership role.
 
 ---
