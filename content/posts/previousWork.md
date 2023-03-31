@@ -20,7 +20,7 @@ type: "page"
 - Led the technical transformation of Artery, a platform to co-organise intimate cultural events, to Bramble, a dynamic virtual meetings product during the tumultuous coronavirus era.
 - Worked in tight collaboration to prototype a speculative product with dynamic videoconferencing elements, leading to around a million dollars in funding.
 - Built engineering team from two engineers to a team of twelve, designing the hiring process from scratch. Established critical partnerships with a network of independent contractors to accelerate development and fill gaps in specialised expertise.
-- Worked directly with founders to set the technical roadmap and regularly prepared development reports to communicate progress across the team. Pushed to stabilise a high-velocity cadence, regularly deploying new features and fixes.
+- Worked directly with founders to set the technical roadmap, scope out new projects and support work in flight. Pushed to stabilise a high-velocity cadence, regularly shipping new features and fixes.
 - Introduced automated deployments, testing strategies, code review and other technical process into the team, improving the reliability of deployments and reducing regressions.
 - Experimented with a variety of management techniques to "steer the ship" on the technical team, continually seeking to improve the health and growth of the team.
 - Pushed to improve non-technical process, introducing a lightweight scoping strategy based off Basecamp's shaping documents. Deployed and fine-tuned this process on over a dozen major projects.
